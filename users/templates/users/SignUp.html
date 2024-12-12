@@ -1,0 +1,55 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign up Webpage</title>
+    <link rel="stylesheet" href='{% static 'signup.css' %}'>
+</head>
+<body>
+<div class="container">
+    <form method = 'post' action="{% url 'signup' %}">
+        {% csrf_token %}
+        <div class="sign-up">
+            <h1 class="heading">Welcome, User!</h1>
+
+            <div class="text">
+                <img src="https://i.postimg.cc/1zgS8WTF/user.png" alt="icon" height="20">
+                <input type="text" placeholder="Name" name = 'name'>
+            </div>
+
+            <div class="text">
+                <img src="https://i.postimg.cc/DZBPRgvC/email.png" alt="icon" height="12">
+                <input type="email" placeholder="Email" name = 'email'>
+            </div>
+
+            <div class="text">
+                <img src="https://i.postimg.cc/Nj5SDK4q/password.png" alt="icon" height="20">
+                <input type="password" placeholder="Password" name = 'password'>
+            </div>
+
+            <div class="text">
+                <img src="https://i.postimg.cc/Nj5SDK4q/password.png" alt="icon" height="20">
+                <input type="password" placeholder="Repeat Password" name = 're_password'>
+            </div>
+
+            <div class="terms">
+                <input type="checkbox" name = 'terms_checkbox'>
+                <p class="conditions">I read and agree to <a href="#">terms & conditions</a></p>
+            </div>
+
+            <button type="submit">CREATE ACCOUNT</button>
+            {{ message }}
+            <p class="conditions">Already have an account? <a href="#">Sign in</a></p>
+
+        </div>
+    </form>
+
+    <div class="text-container">
+        <h1>Glad to see you!</h1>
+        <p>Welcome, please fill in the blanks for sign up</p>
+    </div>
+</div>
+</body>
+</html>
