@@ -14,7 +14,11 @@
   </component>
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
+      <excludeFolder url="file://$MODULE_DIR$/.idea/dataSources" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/ai_models/llama_3.2_1B_model" />
+      <excludeFolder url="file://$MODULE_DIR$/ai_models/llama_3.2_3B_model" />
+      <excludeFolder url="file://$MODULE_DIR$/ai_models/bert_model" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.11 (MentalSathi)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
