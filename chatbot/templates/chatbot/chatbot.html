@@ -1,81 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <meta charset="utf-8"/>
+    <title>Chat Rooms</title>
 </head>
 <body>
-<div class="w-screen h-screen bg-gradient-to-tr from-eee to-neutral-200 flex flex-col justify-center">
+    What chat room would you like to enter?<br>
+    <input id="room-name-input" type="text" size="100"><br>
+    <input id="room-name-submit" type="button" value="Enter">
 
-    <div class="w-[80%] max-w-2xl mx-auto">
+    <script>
+        document.querySelector('#room-name-input').focus();
+        document.querySelector('#room-name-input').onkeyup = function(e) {
+            if (e.key === 'Enter') {  // enter, return
+                document.querySelector('#room-name-submit').click();
+            }
+        };
 
-        <h1 class="z-10 bg-gradient-to-r from-black via-pink-500 to-violet-800 inline-block text-transparent bg-clip-text font-normal text-5xl leading-tight">
-            Hello there,
-        </h1><br/>
-        <h1 class="z-10 bg-gradient-to-r from-black via-pink-500 to-violet-800 inline-block text-transparent bg-clip-text font-normal text-5xl -mt-2 mb-2 leading-tight">
-            How can I help you?</h1>
-
-        <p class="text-neutral-500 leading-tight tracking-tight mb-6 text-lg">Use one of the most common prompts below
-            <br/>or use one of your own prompt to begin</p>
-
-        <div class="flex w-full mb-6 gap-3 text-sm text-neutral-800">
-
-            <div class="group relative grow border border-ccc shadow-sm hover:shadow-md hover:-translate-y-[1px] hover:bg-neutral-100/30 rounded-xl p-4 transition-all duration-300 ">
-                Help me with an easy to make recipe of cheesecake with ingredients
-
-                <svg class="absolute right-2 bottom-2 h-4 text-neutral-500 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 "
-                     xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
-                    <g fill="none">
-                        <path d="M2 8a.75.75 0 0 1 .75-.75h8.787L8.25 4.309a.75.75 0 0 1 1-1.118L14 7.441a.75.75 0 0 1 0 1.118l-4.75 4.25a.75.75 0 1 1-1-1.118l3.287-2.941H2.75A.75.75 0 0 1 2 8z"
-                              fill="currentColor"></path>
-                    </g>
-                </svg>
-            </div>
-
-            <div class="group relative grow border border-ccc shadow-sm hover:shadow-md hover:-translate-y-[1px] hover:bg-neutral-100/30  rounded-xl p-4 transition-all duration-300">
-                Lorem, ipsum dolor sit amet consectetur adipisicing elit. Id, officia!
-                <svg class="absolute right-2 bottom-2 h-4 text-neutral-500 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 "
-                     xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
-                    <g fill="none">
-                        <path d="M2 8a.75.75 0 0 1 .75-.75h8.787L8.25 4.309a.75.75 0 0 1 1-1.118L14 7.441a.75.75 0 0 1 0 1.118l-4.75 4.25a.75.75 0 1 1-1-1.118l3.287-2.941H2.75A.75.75 0 0 1 2 8z"
-                              fill="currentColor"></path>
-                    </g>
-                </svg>
-            </div>
-            <div class="group relative grow border border-ccc shadow-sm hover:shadow-md hover:-translate-y-[1px] hover:bg-neutral-100/30  rounded-xl p-4 transition-all duration-300">
-                Lorem, ipsum dolor sit amet consectetur adipisicing elit. Id, officia!
-                <svg class="absolute right-2 bottom-2 h-4 text-neutral-500 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 "
-                     xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
-                    <g fill="none">
-                        <path d="M2 8a.75.75 0 0 1 .75-.75h8.787L8.25 4.309a.75.75 0 0 1 1-1.118L14 7.441a.75.75 0 0 1 0 1.118l-4.75 4.25a.75.75 0 1 1-1-1.118l3.287-2.941H2.75A.75.75 0 0 1 2 8z"
-                              fill="currentColor"></path>
-                    </g>
-                </svg>
-            </div>
-        </div>
-
-        <div class="bg-white h-28 rounded-2xl shadow-md border border-neutral-200 relative">
-
-            <div class="flex">
-                <textarea class="grow m-4 outline outline-0 focus:outline-0 active:border-transparent min-h-16"
-                          placeholder="Type your question here ..."></textarea>
-            </div>
-
-            <div class="flex gap-2 items-center absolute right-2 bottom-2">
-                <div class="text-xs">0/4000</div>
-                <div class="bg-neutral-700 rounded-full text-white w-8 h-8 p-2 ">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         viewBox="0 0 512 512">
-                        <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                              stroke-width="48" d="M112 244l144-144l144 144"></path>
-                        <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                              stroke-width="48" d="M256 120v292"></path>
-                    </svg>
-
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+        document.querySelector('#room-name-submit').onclick = function(e) {
+            var roomName = document.querySelector('#room-name-input').value;
+            window.location.pathname = '/chat/' + roomName + '/';
+        };
+    </script>
 </body>
 </html>
