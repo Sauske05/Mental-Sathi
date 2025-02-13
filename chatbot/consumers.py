@@ -1,10 +1,21 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import async_to_sync, sync_to_async
+
 from django.contrib.sessions.models import Session
 from .models import Chat
+from ai_models.inference_chat import prompt
+import requests
 
+import torch
 class ChatConsumer(AsyncWebsocketConsumer):
+    def __init__(self):
+        super().__init__()
+        # self.model_path = '../ai_models/llama_3.2_3B_model'
+        # self.model, self.tokenizer = load_model(self.model_path)
+        # self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        # self.streamer = TextStreamer(self.tokenizer, skip_prompt=True,skip_special_tokens=True )
+        self.url = "http://127.0.0.1:8080/chatbot"
     async def connect(self):
         self.user = self.scope['user']
         self.session_id = self.scope['session'].session_key
@@ -66,12 +77,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         }))
 
     def get_chatbot_response(self, user_input):
-        # try:
-        #     response = openai.ChatCompletion.create(
-        #         model="gpt-3.5-turbo",
-        #         messages=[{"role": "user", "content": user_input}],
-        #     )
-        #     return response["choices"][0]["message"]["content"]
-        # except Exception as e:
-        #     return "Error getting response from chatbot."
-        return 'Hello User'
+        try:
+            #response = inference(self.model, self.tokenizer, user_input, self.streamer, self.device)
+            prompt_ = prompt(user_input)
+            data = {"prompt" : prompt_}
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(self.url, json = data,headers=headers)
+            print(f"Response: {response.status_code}, {response.text}")
+            return response.text
+        except Exception as e:
+            return "Error getting response from chatbot."
