@@ -19,8 +19,11 @@ from django.contrib import admin
 from django.urls import path, include
 #from users.views import view_login
 from users import views
+from .views import index, header
 urlpatterns = [
         path("admin/", admin.site.urls),
+        path("", index, name="index"),
+        path('header/', header, name = 'header'),
         path('api/', include('api.urls')),
         path('user/', include('users.urls')),
         path('login/', views.login_view, name = 'login'),

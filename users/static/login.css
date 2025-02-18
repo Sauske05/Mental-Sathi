@@ -1,15 +1,157 @@
-.divider:after,
-.divider:before {
-content: "";
-flex: 1;
-height: 1px;
-background: #eee;
+:root {
+    --primary-color: #ff7f50;      /* Coral Orange */
+    --secondary-color: #ff8c66;    /* Lighter Orange */
+    --accent-color: #ff4500;       /* Deep Orange */
+    --text-color: #2d3748;         /* Dark Gray */
+    --input-bg: #fff;              /* White */
+    --input-border: #ff9f66;       /* Soft Orange */
+    --focus-border: #ff4500;       /* Deep Orange */
+    --btn-hover: #ff5722;          /* Darker Orange */
+    --bg-gradient: linear-gradient(135deg, #ff9966, #ff5e62);
 }
-.h-custom {
-height: calc(100% - 73px);
+
+/* Container styles */
+.container-fluid.h-custom {
+    background: var(--bg-gradient);
+    min-height: calc(100vh - 80px);
+    padding: 2rem 0;
+    padding-top:8rem !important;
 }
-@media (max-width: 450px) {
-.h-custom {
-height: 100%;
+
+/* Form container */
+form.bg-white {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-radius: 15px !important;
+    box-shadow: 0 8px 32px rgba(255, 127, 80, 0.1) !important;
 }
+
+/* Input fields */
+.form-control {
+    background-color: var(--input-bg) !important;
+    border: 2px solid var(--input-border) !important;
+    border-radius: 10px !important;
+    color: var(--text-color) !important;
+    font-size: 16px !important;
+    padding: 12px 15px !important;
+    transition: all 0.3s ease !important;
+}
+
+.form-control:focus {
+    border-color: var(--focus-border) !important;
+    box-shadow: 0 0 0 3px rgba(255, 69, 0, 0.2) !important;
+    outline: none !important;
+}
+
+/* Labels */
+.form-label {
+    color: var(--text-color) !important;
+    font-weight: 500 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Social login buttons */
+.btn-floating {
+    background-color: var(--primary-color) !important;
+    border: none !important;
+    border-radius: 50% !important;
+    color: white !important;
+    width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.3s ease !important;
+    padding: 0 !important;
+    margin: 0 5px !important;
+}
+
+.btn-floating:hover {
+    background-color: var(--btn-hover) !important;
+    transform: translateY(-2px);
+}
+
+/* Main login button */
+.btn-primary {
+    background: var(--primary-color) !important;
+    border: none !important;
+    border-radius: 30px !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    padding: 12px 35px !important;
+    text-transform: uppercase !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-primary:hover {
+    background: var(--btn-hover) !important;
+    box-shadow: 0 5px 15px rgba(255, 87, 34, 0.3) !important;
+    transform: translateY(-2px);
+}
+
+/* Divider */
+.divider {
+    display: flex !important;
+    align-items: center !important;
+    margin: 2rem 0 !important;
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+    flex: 1;
+    border-bottom: 2px solid var(--input-border) !important;
+    margin: 0 1rem;
+}
+
+/* Links */
+.text-body, .link-danger {
+    color: var(--accent-color) !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+.text-body:hover, .link-danger:hover {
+    color: var(--btn-hover) !important;
+    text-decoration: none !important;
+}
+
+/* Footer */
+.bg-primary {
+    background-color: var(--primary-color) !important;
+}
+
+.text-white i {
+    font-size: 1.2rem !important;
+    transition: all 0.3s ease !important;
+}
+
+.text-white i:hover {
+    transform: scale(1.2);
+    opacity: 0.8;
+}
+
+/* Checkbox */
+.form-check-input {
+    border: 2px solid var(--input-border) !important;
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container-fluid.h-custom {
+        padding: 1rem !important;
+    }
+    
+    form.bg-white {
+        padding: 1.5rem !important;
+    }
+}
+
+/* Custom height */
+.vh-100 {
+    min-height: 100vh;
 }
