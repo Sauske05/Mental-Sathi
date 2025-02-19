@@ -28,5 +28,8 @@ urlpatterns = [
         path('user/', include('users.urls')),
         path('login/', views.login_view, name = 'login'),
         path('homepage/', views.homepage, name = 'homepage'),
+
+        path('admin_dashboard/', views.admin_dashboard, name = 'admin_dashboard'),
         path("chat/", include("chatbot.urls")),
+
 ]

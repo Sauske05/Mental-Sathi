@@ -52,8 +52,8 @@ def homepage(request):
     return redirect('login')
 
 
-# def signup(request):
-#     return render(request, 'users/SignUp.html')
+def admin_dashboard(request):
+    return render(request, 'users/index.html')
 
 
 def signup(request):
