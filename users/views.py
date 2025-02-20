@@ -97,3 +97,37 @@ def signup(request):
             return render(request, 'users/SignUp.html', {'message' : message})
 
     return render(request, 'users/SignUp.html', {'message' : ''})
+
+
+
+def buttons(request):
+    return render(request, 'users/buttons.html')
+
+def card(request):
+    return render(request, 'users/cards.html')
+
+
+def utilities_border(request):
+    return render(request, 'users/utilities-border.html')
+
+def utilities_animation(request):
+    return render(request, 'users/utilities-animation.html')
+
+def utilities_color(request):
+    return render(request, 'users/utilities-color.html')
+
+def utilities_other(request):
+    return render(request, 'users/utilities-other.html')
+
+
+def error_page(request):
+    return render(request, 'users/404.html')
+
+def blank_page(request):
+    return render(request, 'users/blank.html')
+
+def admin_charts(request):
+    return render(request, 'users/charts.html')
+
+def admin_tables(request):
+    return render(request, 'users/tables.html')
