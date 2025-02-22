@@ -17,7 +17,6 @@ def chat_redirect(request):
     # Create a unique room name
     room_name = f"{session_id}_{user_id}"
 
-    # Redirect to the dynamically generated chat room
     return redirect(chat_room, room_name = room_name)
 
 

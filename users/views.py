@@ -53,7 +53,7 @@ def homepage(request):
 
 
 def admin_dashboard(request):
-    return render(request, 'users/index.html')
+    return render(request, 'users/templates/admin/index.html')
 
 
 def signup(request):
@@ -101,33 +101,33 @@ def signup(request):
 
 
 def buttons(request):
-    return render(request, 'users/buttons.html')
+    return render(request, 'users/templates/admin/buttons.html')
 
 def card(request):
-    return render(request, 'users/cards.html')
+    return render(request, 'users/templates/admin/cards.html')
 
 
 def utilities_border(request):
-    return render(request, 'users/utilities-border.html')
+    return render(request, 'users/templates/admin/utilities-border.html')
 
 def utilities_animation(request):
-    return render(request, 'users/utilities-animation.html')
+    return render(request, 'users/templates/admin/utilities-animation.html')
 
 def utilities_color(request):
-    return render(request, 'users/utilities-color.html')
+    return render(request, 'users/templates/admin/utilities-color.html')
 
 def utilities_other(request):
-    return render(request, 'users/utilities-other.html')
+    return render(request, 'users/templates/admin/utilities-other.html')
 
 
 def error_page(request):
-    return render(request, 'users/404.html')
+    return render(request, 'users/templates/admin/404.html')
 
 def blank_page(request):
-    return render(request, 'users/blank.html')
+    return render(request, 'users/templates/admin/blank.html')
 
 def admin_charts(request):
-    return render(request, 'users/charts.html')
+    return render(request, 'users/templates/admin/charts.html')
 
 def admin_tables(request):
-    return render(request, 'users/tables.html')
+    return render(request, 'users/templates/admin/tables.html')
