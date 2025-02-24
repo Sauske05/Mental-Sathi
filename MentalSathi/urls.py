@@ -37,4 +37,5 @@ urlpatterns = [
         path('user-charts/', user_views.user_charts, name = 'user_charts'),
         path('user-info/', user_views.user_blank, name = 'user_info' ),
         path('sentiment-tracker/',sentiment_views.sentiment_page, name = 'sentiment'),
+        path('sentiment_process/', sentiment_views.sentiment_process, name = 'sentiment_process'),
 ]

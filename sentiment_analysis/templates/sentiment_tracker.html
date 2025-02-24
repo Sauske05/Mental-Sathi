@@ -23,7 +23,7 @@
 
 
     <!-- CSS for the Main body-->
-     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
     <style>
         .sentiment-card {
@@ -405,7 +405,7 @@
                 {#                    <!-- Page Heading -->#}
                 {#                    <h1 class="h3 mb-4 text-gray-800">Blank Page</h1>#}
                 <div class="container py-5">
-                    <div class="sentiment-card bg-white p-4 animate__animated animate__fadeIn">
+                    <div class="sentiment-card bg-white p-4 animate__animated animate__fadeIn" id='moodForm'>
                         <h2 class="text-center mb-4 header-text">How are you feeling today?</h2>
 
                         <div class="text-center mb-4" id="emotionButtons">
@@ -442,11 +442,18 @@
                             </button>
                         </div>
 
+                    </div>
+                    <!-- New UI for recommendations after mood is saved -->
+                    <div class="recommendation-card bg-white p-4 animate__animated animate__fadeIn d-none"
+                         id="recommendationCard">
                         <div class="mt-4 text-center d-none" id="thankYouMessage">
                             <div class="alert alert-success animate__animated animate__fadeIn">
                                 Thank you for sharing! Your mood has been recorded.
                             </div>
                         </div>
+                        <p id="recommendationMessage" class="text-center">Be sure to come back tomorrow!</p>
+                        <!-- Element to display the result -->
+                        <div id="sentimentResult"></div>
                     </div>
                 </div>
 
@@ -456,8 +463,18 @@
                         const emotionButtons = document.querySelectorAll('.emotion-btn');
                         const submitButton = document.getElementById('submitButton');
                         const thankYouMessage = document.getElementById('thankYouMessage');
+                        const moodForm = document.getElementById('moodForm');
+                        const recommendationCard = document.getElementById('recommendationCard');
+                        const sentimentResult = document.getElementById('sentimentResult');
                         let selectedEmotion = null;
 
+                        // Check if mood has already been saved today
+                        if (localStorage.getItem('moodSavedToday') === 'true') {
+                            showRecommendationUI();
+                        } else {
+                            // Enable buttons if mood hasn't been saved today
+                            enableEmotionButtons();
+                        }
                         emotionButtons.forEach(button => {
                             button.addEventListener('click', function () {
                                 // Remove selection from all buttons
@@ -472,9 +489,41 @@
                             });
                         });
 
+                        function getCSRFToken() {
+                            return document.cookie.split('; ')
+                                .find(row => row.startsWith('csrftoken='))
+                                ?.split('=')[1];
+                        }
+
                         submitButton.addEventListener('click', function () {
                             const feelingsText = document.getElementById('feelingsText').value;
+                            fetch('/sentiment_process/', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': getCSRFToken()
+                                },
+                                body: JSON.stringify({feelingsText: feelingsText, selectedEmotion: selectedEmotion})
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    console.log('Success:', data);
+                                    {#const sentimentResult = data.sentiment || "No sentiment detected";  // Adjust the field as per the response structure#}
 
+                                    // Update the UI to display the sentiment result
+                                    document.getElementById('sentimentResult').innerText = data.response;
+                                })
+                                .catch((error) => {
+                                    console.error('Error:', error);
+                                });
+                            // Mark mood as saved today in localStorage
+                            localStorage.setItem('moodSavedToday', 'true');
+
+                            // Show thank you message
+                            thankYouMessage.classList.remove('d-none');
+                            submitButton.disabled = true;
+                            emotionButtons.forEach(btn => btn.disabled = true);
+                            document.getElementById('feelingsText').disabled = true;
                             // Here you would typically send this data to your backend
                             console.log('Emotion:', selectedEmotion);
                             console.log('Additional thoughts:', feelingsText);
@@ -486,7 +535,27 @@
                             submitButton.disabled = true;
                             emotionButtons.forEach(btn => btn.disabled = true);
                             document.getElementById('feelingsText').disabled = true;
+
+                            setTimeout(showRecommendationUI, 60);
                         });
+
+                        function showRecommendationUI() {
+                            // Hide the mood form
+                            moodForm.classList.add('d-none');
+
+                            // Show the recommendation card
+                            recommendationCard.classList.remove('d-none');
+
+                            // Display the recommendation message
+                            document.getElementById('recommendationMessage').innerText = "Thank you for tracking your mood today! Be sure to come back tomorrow!";
+                        }
+
+                        function enableEmotionButtons() {
+                            emotionButtons.forEach(button => {
+                                button.disabled = false;
+                            });
+                            submitButton.disabled = false;
+                        }
                     });
                 </script>
             </div>
