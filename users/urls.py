@@ -4,9 +4,7 @@ from .views import *
 from django.urls import re_path
 from django.views.static import serve
 from django.conf import settings
-
 urlpatterns = [
-    path('signup/', signup, name='signup'),
 
     path('admin/cards/', card, name='admin_cards'),
 

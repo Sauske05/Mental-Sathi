@@ -16,15 +16,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         print(self.scope)
-        self.user = self.scope['user']
+        #self.user = self.scope['user']
+        self.user_name = self.scope['session']['user_id']
         self.session_id = self.scope['session'].session_key
-
+        print('This is the username--> ',self.user_name)
         if not self.session_id:
             await sync_to_async(self.scope['session'].create)()
             self.session_id = self.scope['session'].session_key
 
         #self.room_name = self.scope['url_route']['kwargs']['room_name']
-        self.room_name = f'{self.session_id}_{self.user.username}'
+        self.room_name = f'{self.session_id}'
         #self.room_name =
         self.room_group_name = f"chat_{self.room_name}"
 
@@ -55,13 +56,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
         await asyncio.sleep(0)
         #print('Message sent to websocket')
-        print('Reach check')
+        #print('Reach check')
         #bot_response = ""
         # async for chunk in self.stream_chatbot_response(user_message):
         #     bot_response += chunk
         bot_response = await self.stream_chatbot_response(user_message)
-        print('This is the bot message \n')
-        print(bot_response)
+        #print('This is the bot message \n')
+        #print(bot_response)
         # Send final message indicating stream is complete
 
         await self.channel_layer.group_send(

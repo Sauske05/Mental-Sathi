@@ -18,18 +18,23 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 #from users.views import view_login
-from users import views
+from users import views as user_views
 from .views import index, header
+from sentiment_analysis import views as sentiment_views
 urlpatterns = [
         path("admin/", admin.site.urls),
         path("", index, name="index"),
+        path('signup/', user_views.signup, name='signup'),
         path('header/', header, name = 'header'),
         path('api/', include('api.urls')),
         path('user/', include('users.urls')),
-        path('login/', views.login_view, name = 'login'),
-        path('homepage/', views.homepage, name = 'homepage'),
+        path('login/', user_views.login_view, name = 'login'),
+        path('homepage/', user_views.homepage, name = 'homepage'),
 
-        path('admin_dashboard/', views.admin_dashboard, name = 'admin_dashboard'),
+        path('admin_dashboard/', user_views.admin_dashboard, name = 'admin_dashboard'),
         path("chat/", include("chatbot.urls")),
-
+        path('dashboard/', user_views.user_dashboard, name = 'user_dashboard'),
+        path('user-charts/', user_views.user_charts, name = 'user_charts'),
+        path('user-info/', user_views.user_blank, name = 'user_info' ),
+        path('sentiment-tracker/',sentiment_views.sentiment_page, name = 'sentiment'),
 ]
