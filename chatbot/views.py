@@ -21,4 +21,4 @@ def chat_redirect(request):
 
 
 def chat_room(request, room_name):
-    return render(request, "chatbot/test.html", {"room_name": room_name})
+    return render(request, "chatbot/room.html", {"room_name": room_name})
