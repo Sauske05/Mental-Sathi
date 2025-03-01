@@ -35,7 +35,7 @@ urlpatterns = [
         path("chat/", include("chatbot.urls")),
         path('dashboard/', user_views.user_dashboard, name = 'user_dashboard'),
         path('user-charts/', user_views.user_charts, name = 'user_charts'),
-        path('user-info/', user_views.user_blank, name = 'user_info' ),
+        path('user-info/', user_views.user_profile, name = 'user_info' ),
         path('sentiment-tracker/',sentiment_views.sentiment_page, name = 'sentiment'),
         path('sentiment_process/', sentiment_views.sentiment_process, name = 'sentiment_process'),
 ]

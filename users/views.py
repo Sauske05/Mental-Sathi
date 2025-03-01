@@ -53,7 +53,7 @@ def homepage(request):
 
 
 def admin_dashboard(request):
-    return render(request, 'admin/index.html')
+    return render(request, 'admin/index_.html')
 
 
 def signup_authentication(func):
@@ -148,8 +148,8 @@ def admin_tables(request):
 def user_dashboard(request):
     return render(request, 'user_template/index.html')
 
-def user_blank(request):
-    return render(request, 'user_template/blank.html')
+def user_profile(request):
+    return render(request, 'user_template/profile.html')
 
 def user_charts(request):
     return render(request, 'user_template/charts.html')
