@@ -553,210 +553,240 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    {{ room_name|json_script:"room-name"}}
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const welcomeScreen = document.getElementById('welcomeScreen');
-            const startChatBtn = document.getElementById('startChatBtn');
-            const chatMessages = document.getElementById('chatMessages');
-            const messageInput = document.getElementById('messageInput');
-            const sendButton = document.getElementById('sendButton');
-            const sidebar = document.getElementById('sidebar');
-            const menuToggle = document.getElementById('menuToggle');
-            {#const newChatBtn = document.querySelector('.new-chat-btn');#}
-            const chatItems = document.querySelectorAll('.chat-item');
+    const welcomeScreen = document.getElementById('welcomeScreen');
+    const startChatBtn = document.getElementById('startChatBtn');
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+    const sidebar = document.getElementById('sidebar');
+    const menuToggle = document.getElementById('menuToggle');
+    const chatItems = document.querySelectorAll('.chat-item');
+    const roomName = JSON.parse(document.getElementById('room-name').textContent);
+    const socket = new WebSocket(
+        'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
+    );
+    let currentBotMessageElement = null;
 
-            // Menu toggle functionality for mobile
-            if (menuToggle) {
-                menuToggle.addEventListener('click', () => {
-                    sidebar.classList.toggle('open');
-                });
-            }
+    // WebSocket event handlers
+    socket.onopen = function(e) {
+        console.log("WebSocket connection established");
+    };
 
-            // New chat button functionality
-            {#newChatBtn.addEventListener('click', () => {#}
-            {#    // Clear chat messages#}
-            {#    chatMessages.innerHTML = '';#}
-            {##}
-            {#    // Update active chat#}
-            {#    chatItems.forEach(item => {#}
-            {#        item.classList.remove('active');#}
-            {#    });#}
-            {#    chatItems[0].classList.add('active');#}
-            {##}
-            {#    // Hide sidebar on mobile after selection#}
-            {#    if (window.innerWidth <= 992) {#}
-            {#        sidebar.classList.remove('open');#}
-            {#    }#}
-            {##}
-            {#    // Show welcome screen#}
-            {#    welcomeScreen.classList.remove('hidden');}#}
+    socket.onclose = function(e) {
+        console.log("WebSocket connection closed", e);
+    };
 
+    socket.onerror = function(e) {
+        console.error("WebSocket error:", e);
+    };
 
-            // Chat history item click
-            chatItems.forEach(item => {
-                item.addEventListener('click', () => {
-                    chatItems.forEach(i => i.classList.remove('active'));
-                    item.classList.add('active');
+    socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        console.log(data)
 
-                    // Hide sidebar on mobile after selection
-                    if (window.innerWidth <= 992) {
-                        sidebar.classList.remove('open');
-                    }
-                });
-            });
+        if (data.message_type === "bot") {
+            // Handle streaming bot message
+            console.log('Code reaches here!')
+            handleStreamingBotMessage(data.content);
+        }
+    };
 
-            // Auto-resize textarea as user types
-            messageInput.addEventListener('input', function() {
-                this.style.height = 'auto';
-                this.style.height = (this.scrollHeight) + 'px';
-                sendButton.disabled = !this.value.trim();
-            });
+    // Function to handle streaming bot messages
+    function handleStreamingBotMessage(chunk) {
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            // Handle Enter key to send message
-            messageInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    if (this.value.trim()) {
-                        sendMessage();
-                    }
-                }
-            });
+        // If this is the first chunk, create a new message element
+        if (!currentBotMessageElement) {
+            removeTypingIndicator();
 
-            // Send button click handler
-            sendButton.addEventListener('click', sendMessage);
+            currentBotMessageElement = document.createElement('div');
+            currentBotMessageElement.className = 'message bot-message';
+            currentBotMessageElement.innerHTML = `
+                <div class="message-avatar bot-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content">
+                    <div class="message-text"></div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
 
-            // Start chat button handler
-            startChatBtn.addEventListener('click', () => {
-                welcomeScreen.classList.add('hidden');
-                // Show initial bot message after a slight delay
-                setTimeout(() => {
-                    addBotMessage("Hello! How can I assist you today?");
-                }, 500);
-            });
+            chatMessages.appendChild(currentBotMessageElement);
+        }
 
-            // Function to send a user message
-            function sendMessage() {
-                const message = messageInput.value.trim();
-                if (!message) return;
+        // Append the new chunk to the existing message
+        const messageTextDiv = currentBotMessageElement.querySelector('.message-text');
+        messageTextDiv.textContent += chunk;
 
-                // Add user message to chat
-                addUserMessage(message);
+        scrollToBottom();
+    }
 
-                // Clear input
-                messageInput.value = '';
-                messageInput.style.height = 'auto';
-                sendButton.disabled = true;
-
-                // Show typing indicator
-                showTypingIndicator();
-
-                // Simulate bot response after a delay
-                setTimeout(() => {
-                    // Remove typing indicator
-                    removeTypingIndicator();
-
-                    // Generate a response based on user input
-                    let botResponse;
-                    if (message.toLowerCase().includes('hello') || message.toLowerCase().includes('hi')) {
-                        botResponse = "Hello there! How can I help you today?";
-                    } else if (message.toLowerCase().includes('help')) {
-                        botResponse = "I'm here to help! You can ask me questions, request information, or just chat. What would you like to know?";
-                    } else if (message.toLowerCase().includes('thank')) {
-                        botResponse = "You're very welcome! Is there anything else you'd like assistance with?";
-                    } else {
-                        botResponse = "Thanks for your message. I'm processing your request and will help you with that. Is there anything specific you'd like to know about this topic?";
-                    }
-
-                    addBotMessage(botResponse);
-                }, 1500);
-            }
-
-            // Function to add a user message to the chat
-            function addUserMessage(text) {
-                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message user-message';
-                messageDiv.innerHTML = `
-                    <div class="message-content">
-                        <div class="message-text">${text}</div>
-                        <div class="message-time">${time}</div>
-                    </div>
-                    <div class="message-avatar user-message-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                `;
-
-                chatMessages.appendChild(messageDiv);
-                scrollToBottom();
-            }
-
-            // Function to add a bot message to the chat
-            function addBotMessage(text) {
-                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message bot-message';
-                messageDiv.innerHTML = `
-                    <div class="message-avatar bot-avatar">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                    <div class="message-content">
-                        <div class="message-text">${text}</div>
-                        <div class="message-time">${time}</div>
-                    </div>
-                `;
-
-                chatMessages.appendChild(messageDiv);
-                scrollToBottom();
-            }
-
-            // Function to show typing indicator
-            function showTypingIndicator() {
-                const typingDiv = document.createElement('div');
-                typingDiv.className = 'message bot-message typing-message';
-                typingDiv.innerHTML = `
-                    <div class="message-avatar bot-avatar">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                    <div class="message-content">
-                        <div class="typing-indicator">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        </div>
-                    </div>
-                `;
-
-                typingDiv.id = 'typingIndicator';
-                chatMessages.appendChild(typingDiv);
-                scrollToBottom();
-            }
-
-            // Function to remove typing indicator
-            function removeTypingIndicator() {
-                const typingIndicator = document.getElementById('typingIndicator');
-                if (typingIndicator) {
-                    typingIndicator.remove();
-                }
-            }
-
-            // Scroll to bottom of chat
-            function scrollToBottom() {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-
-            // Handle clicks outside sidebar to close it on mobile
-            document.addEventListener('click', (e) => {
-                if (window.innerWidth <= 992 &&
-                    sidebar.classList.contains('open') &&
-                    !sidebar.contains(e.target) &&
-                    e.target !== menuToggle &&
-                    !menuToggle.contains(e.target)) {
-                    sidebar.classList.remove('open');
-                }
-            });
+    // Menu toggle functionality for mobile
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
         });
+    }
+
+    // Chat history item click
+    chatItems.forEach(item => {
+        item.addEventListener('click', () => {
+            chatItems.forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+
+            // Hide sidebar on mobile after selection
+            if (window.innerWidth <= 992) {
+                sidebar.classList.remove('open');
+            }
+        });
+    });
+
+    // Auto-resize textarea as user types
+    messageInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+        sendButton.disabled = !this.value.trim();
+    });
+
+    // Handle Enter key to send message
+    messageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (this.value.trim()) {
+                sendMessage();
+            }
+        }
+    });
+
+    // Send button click handler
+    sendButton.addEventListener('click', sendMessage);
+
+    // Start chat button handler
+    startChatBtn.addEventListener('click', () => {
+        welcomeScreen.classList.add('hidden');
+        // Show initial bot message after a slight delay
+        setTimeout(() => {
+            addBotMessage("Hello! How can I assist you today?");
+        }, 500);
+    });
+
+    // Function to send a user message
+    function sendMessage() {
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        // Add user message to chat
+        addUserMessage(message);
+
+        // Clear input
+        messageInput.value = '';
+        messageInput.style.height = 'auto';
+        sendButton.disabled = true;
+
+        // Show typing indicator
+        showTypingIndicator();
+
+        // Reset the current bot message element to prepare for a new streamed response
+        currentBotMessageElement = null;
+
+        // Send message to WebSocket in the format expected by the backend
+        // This triggers the stream_chatbot_response function with user_input
+        socket.send(JSON.stringify({
+            'type': 'user_message',
+            'message': message,
+            'action': 'stream_response'  // Signal to trigger stream_chatbot_response
+        }));
+    }
+
+    // Function to add a user message to the chat
+    function addUserMessage(text) {
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message user-message';
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                <div class="message-text">${text}</div>
+                <div class="message-time">${time}</div>
+            </div>
+            <div class="message-avatar user-message-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+        `;
+
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+    }
+
+    // Function to add a complete bot message to the chat (for non-streamed messages)
+    function addBotMessage(text) {
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message bot-message';
+        messageDiv.innerHTML = `
+            <div class="message-avatar bot-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="message-content">
+                <div class="message-text">${text}</div>
+                <div class="message-time">${time}</div>
+            </div>
+        `;
+
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+    }
+
+    // Function to show typing indicator
+    function showTypingIndicator() {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message bot-message typing-message';
+        typingDiv.innerHTML = `
+            <div class="message-avatar bot-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="message-content">
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        `;
+
+        typingDiv.id = 'typingIndicator';
+        chatMessages.appendChild(typingDiv);
+        scrollToBottom();
+    }
+
+    // Function to remove typing indicator
+    function removeTypingIndicator() {
+        const typingIndicator = document.getElementById('typingIndicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+
+    // Scroll to bottom of chat
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Handle clicks outside sidebar to close it on mobile
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 992 &&
+            sidebar.classList.contains('open') &&
+            !sidebar.contains(e.target) &&
+            e.target !== menuToggle &&
+            !menuToggle.contains(e.target)) {
+            sidebar.classList.remove('open');
+        }
+    });
+});
     </script>
 </body>
 </html>

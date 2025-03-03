@@ -9,7 +9,13 @@ from django.contrib import messages
 from django.contrib.sessions.models import Session
 from .forms import LoginForm
 from .models import User
+from .models import DashboardRecords
+from datetime import timedelta, datetime
+from django.utils.timezone import now
+import pytz
+from django.db import transaction
 
+NEPAL_TZ = pytz.timezone('Asia/Kathmandu')
 def login_view(request):
     if request.method == "POST":
         form = LoginForm(request.POST)
@@ -22,12 +28,36 @@ def login_view(request):
             try:
                 # Check if user exists
                 user = User.objects.get(email=email)
-
+                dashboard_detail = DashboardRecords.objects.get(user_name=user)
                 # Check password
                 if check_password(password, user.password):
                     # Start session
                     request.session['user_id'] = user.user_name
-                    messages.success(request, "Login successful!")
+                    #Updating the dashboard
+                    current_time = datetime.now(NEPAL_TZ)
+
+                    current_date = current_time.date()
+                    last_login_date = dashboard_detail.last_login_date
+                    #print(f'Current Date: {current_date}')
+                    #print(f'Last Login Date: {last_login_date}')
+                    if not last_login_date:
+                        dashboard_detail.login_streak = 1
+                        dashboard_detail.number_of_login_days =1
+                    if last_login_date:
+                        last_login_date = last_login_date.date()
+                        if last_login_date == current_date:
+                            pass
+                        elif last_login_date == current_date - timedelta(days=1):
+                            dashboard_detail.login_streak +=1
+                            dashboard_detail.number_of_login_days +=1
+                        else:
+                            dashboard_detail.login_streak = 0
+                            dashboard_detail.number_of_login_days +=1
+                    dashboard_detail.last_login_date = current_date
+
+
+                    dashboard_detail.save()
+                    #messages.success(request, "Login successful!")
                     return redirect(user_dashboard, )  # Redirect to your homepage URL name
                 else:
                     messages.error(request, "Invalid password.")
@@ -80,6 +110,10 @@ def signup_authentication(func):
                 message = "Passwords do not match."
                 return render(request, 'user_template/SignUp.html', {'message': message})
 
+            if User.objects.filter(user_name=name).exists():
+                message = "User already exists."
+                return render(request, 'user_template/SignUp.html', {'message': message})
+
             if User.objects.filter(email=email).exists():
                 message = "Email is already in use."
                 return render(request, 'user_template/SignUp.html', {'message': message})
@@ -101,8 +135,14 @@ def signup(request):
     if request.method == 'POST':
         try:
             user_data = request.clean_data
-            user = User(user_name=user_data.name, password=user_data.password, email=user_data.email)
-            user.save()
+            # print(f'This is the user_data {user_data.get("name")}')
+            # #print(f'user_data {user_data.keys()}')
+            with transaction.atomic():
+                user = User(user_name=user_data.get("name"), password=user_data.get("password"), email=user_data.get("email"))
+                user.save()
+                user = User.objects.get(user_name=user_data.get("name"))
+                dashboard_init = DashboardRecords(user_name=user, login_streak=0, number_of_login_days=0, positive_streak=0)
+                dashboard_init.save()
             messages.success(request, "Account created successfully! Please log in.")
             return render(request, 'user_template/Login_page.html')
         except Exception as e:
@@ -146,7 +186,9 @@ def admin_tables(request):
     return render(request, 'admin/tables.html')
 
 def user_dashboard(request):
-    return render(request, 'user_template/index.html')
+    user_name = request.session.get('user_id')
+    user_details = DashboardRecords.objects.get(user_name=user_name)
+    return render(request, 'user_template/index.html', {'user_details' : user_details})
 
 def user_profile(request):
     return render(request, 'user_template/profile.html')

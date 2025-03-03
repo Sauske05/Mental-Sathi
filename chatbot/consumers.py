@@ -3,6 +3,8 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import async_to_sync, sync_to_async
 import httpx
 from django.contrib.sessions.models import Session
+from django.http import StreamingHttpResponse
+
 from .models import Chat
 from ai_models.inference_chat import prompt
 import asyncio
@@ -42,38 +44,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        user_message = data["message"]
+        message_type = data.get('type')
 
-        # Send user message to the group
-        #print('Sending Message to Websocket')
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                "type": "chat_message",
-                "message_type": "user",
-                "content": user_message
-            }
-        )
-        await asyncio.sleep(0)
-        #print('Message sent to websocket')
-        #print('Reach check')
-        #bot_response = ""
-        # async for chunk in self.stream_chatbot_response(user_message):
-        #     bot_response += chunk
-        bot_response = await self.stream_chatbot_response(user_message)
-        #print('This is the bot message \n')
-        #print(bot_response)
-        # Send final message indicating stream is complete
+        if message_type == 'user_message':
+            user_input = data.get('message')
+            action = data.get('action')
 
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                "type": "chat_message",
-                "message_type": "bot",
-                "content": bot_response,
-                "is_complete": True
-            }
-        )
+            if action == 'stream_response':
+                # This is the key part - calling your function
+                await self.stream_chatbot_response(user_input)
 
 
     @sync_to_async
@@ -107,22 +86,29 @@ class ChatConsumer(AsyncWebsocketConsumer):
             prompt_ = prompt(user_input)
             data = {"prompt": prompt_}
             headers = {"Content-Type": "application/json"}
-            print('invoked stream chatbot')
-            # Set a custom timeout
-            timeout = httpx.Timeout(200)  # 10 seconds, adjust as needed
-            try:
-                response = requests.post(self.url, json=data, headers=headers)
-                #print('This is the response')
-                #print(response.text)
 
-                # Ensure the response is streamed
-                # for chunk in response.text:
-                #     await asyncio.sleep(0.1)
-                #     yield chunk
-                return response.json()
-            except httpx.ReadTimeout:
-                return "Error: The request timed out while waiting for the LLM's response."
-            except httpx.HTTPStatusError as exc:
-                return f"Error: HTTP {exc.response.status_code} - {exc.response.text}"
-            except Exception as exc:
-                return f"An unexpected error occurred: {str(exc)}"
+            async def stream_llm_response():
+                url = 'http://localhost:8080/chatbot'
+                timeout = httpx.Timeout(120.0)
+
+                async with httpx.AsyncClient(timeout=timeout) as client:
+                    async with client.stream("POST", url, json=data) as response:
+                        async for chunk in response.aiter_text():
+                            # Yield each chunk as it arrives
+                            print(chunk)
+                            yield chunk
+
+            async for token in stream_llm_response():
+                #await self.send(text_data=token)
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        "type": "chat_message",
+                        "message_type": "bot",
+                        "content": token
+                    }
+                )
+                await asyncio.sleep(0.05)
+
+            # Return a streaming response to the frontend
+            #return StreamingHttpResponse(stream_llm_response(), content_type='text/plain')

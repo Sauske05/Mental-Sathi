@@ -78,14 +78,15 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "MentalSathi.wsgi.application"
+#WSGI_APPLICATION = "MentalSathi.wsgi.application"
 ASGI_APPLICATION = "MentalSathi.asgi.application"
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
-        },
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        # "BACKEND": "channels_redis.core.RedisChannelLayer",
+        # "CONFIG": {
+        #     "hosts": [("127.0.0.1", 6379)],
+        # },
     },
 }
 # Database
