@@ -8,3 +8,4 @@ class SentimentModel(models.Model):
     recommendation_text = models.TextField()
     user_query = models.TextField()
     date_time = models.DateTimeField(default=datetime.datetime.now())
+    query_sentiment = models.CharField(max_length=120, default='')
