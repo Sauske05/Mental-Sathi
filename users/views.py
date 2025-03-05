@@ -1,3 +1,4 @@
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -14,7 +15,7 @@ from datetime import timedelta, datetime
 from django.utils.timezone import now
 import pytz
 from django.db import transaction
-
+from users.serializers import UserSerializer
 NEPAL_TZ = pytz.timezone('Asia/Kathmandu')
 def login_view(request):
     if request.method == "POST":
@@ -74,7 +75,15 @@ def view_login(request):
     return render(request, 'user_template/Login_page.html', context= {'name' : 'Arun', 'age' : '21'})
 # Create your views here.
 
-
+def get_user_data(request, user_name):
+        try:
+            #user_name = request.POST.get('user_name')
+            user_obj = User.objects.get(user_name=user_name)
+        except User.DoesNotExist:
+            return HttpResponse(status=404)
+        if request.method == "GET":
+            serializer = UserSerializer(user_obj)
+            return JsonResponse(serializer.data, safe=False)
 def homepage(request):
     user_id = request.session.get('user_id')
     if user_id:

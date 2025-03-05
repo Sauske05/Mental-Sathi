@@ -27,6 +27,7 @@ urlpatterns = [
         path('signup/', user_views.signup, name='signup'),
         path('header/', header, name = 'header'),
         path('api/', include('api.urls')),
+        path('sentiment/', include('sentiment_analysis.urls')),
         path('user/', include('users.urls')),
         path('login/', user_views.login_view, name = 'login'),
         path('homepage/', user_views.homepage, name = 'homepage'),

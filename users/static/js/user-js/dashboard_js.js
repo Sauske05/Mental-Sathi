@@ -1,89 +1,99 @@
 Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
 Chart.defaults.global.defaultFontColor = '#858796';
 
+
+//let userName = sessionStorage.getItem('user_id');
 let ctx_bar = document.getElementById("myAreaChart").getContext("2d");
 
 let emotions = ["Happy", "Sad", "Angry", "Excited", "Calm", "Anxious"];
-let frequencies = [45, 50, 42, 48, 46, 44];
+let emotions_dict = {
+    "Happy": 0, "Sad": 0, "Angry": 0, "Excited": 0, "Calm": 0, "Anxious": 0
+};
 
-new Chart(ctx_bar, {
-    type: 'bar',
-    data: {
-        labels: emotions,
-        datasets: [{
-            label: "Emotion Frequency",
-            backgroundColor: [
-                "rgba(78, 115, 223, 0.7)",
-                "rgba(231, 74, 59, 0.7)",
-                "rgba(246, 194, 62, 0.7)",
-                "rgba(28, 200, 138, 0.7)",
-                "rgba(133, 135, 150, 0.7)",
-                "rgba(54, 185, 204, 0.7)"
-            ],
-            borderColor: [
-                "rgba(78, 115, 223, 1)",
-                "rgba(231, 74, 59, 1)",
-                "rgba(246, 194, 62, 1)",
-                "rgba(28, 200, 138, 1)",
-                "rgba(133, 135, 150, 1)",
-                "rgba(54, 185, 204, 1)"
-            ],
-            borderWidth: 2,
-            borderRadius: 10,
-            data: frequencies
-        }]
-    },
-    options: {
-        maintainAspectRatio: false,
-        responsive: true,
-        layout: {
-            padding: {
-                left: 10,
-                right: 25,
-                top: 25,
-                bottom: 0
-            }
-        },
-        scales: {
-            x: {
-                ticks: {color: "white", font: {size: 14}},
-                grid: {display: false}
-            },
-            y: {
-                ticks: {
-                    color: "white",
-                    font: {size: 14},
-                    padding: 10
-                },
-                grid: {
-                    color: "rgba(255,255,255,0.2)"
-                }
-            }
-        },
-        plugins: {
-            legend: {
-                display: false,
-                labels: {
-                    color: "white",
-                    font: {size: 14}
-                }
-            },
-            tooltip: {
-                backgroundColor: "rgba(0, 0, 0, 0.8)",
-                titleColor: "white",
-                bodyColor: "white",
-                padding: 10,
-                cornerRadius: 5
-            }
-        },
-        animation: {
-            duration: 1500,
-            easing: 'easeOutBounce'
-        }
+async function getSentimentData() {
+    const url = `http://127.0.0.1:8000/sentiment/fetch_sentiment_data/arun`;
+
+  console.log('Attempting to fetch URL:', url);
+  console.log('Full resolved URL will be:', window.location.pathname + url);
+  //const url = `sentiment/fetch_sentiment_data/arun`;
+  //console.log(userName)
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
     }
-});
 
+    const json = await response.json();
+    console.log(json);
+    return json;
+  } catch (error) {
+    console.error('Error fetching sentiment data:', error.message);
+    return null;
+  }
+}
 
+function updateEmotionDict(jsonData) {
+    if (!jsonData) return;
+
+    jsonData.forEach(data => {
+        if (emotions_dict.hasOwnProperty(data.sentiment_data)) {
+            emotions_dict[data.sentiment_data] += 1;
+        }
+    });
+}
+
+// Initialization function to set up charts
+async function initializeDashboard() {
+    try {
+        // Fetch sentiment data
+        const sentimentData = await getSentimentData();
+
+        // Update emotion dictionary
+        updateEmotionDict(sentimentData);
+
+        // Update frequencies for bar chart
+        let frequencies = Object.values(emotions_dict);
+
+        // Create or update bar chart
+        new Chart(ctx_bar, {
+            type: 'bar',
+            data: {
+                labels: emotions,
+                datasets: [{
+                    label: "Emotion Frequency",
+                    backgroundColor: [
+                        "rgba(78, 115, 223, 0.7)",
+                        "rgba(231, 74, 59, 0.7)",
+                        "rgba(246, 194, 62, 0.7)",
+                        "rgba(28, 200, 138, 0.7)",
+                        "rgba(133, 135, 150, 0.7)",
+                        "rgba(54, 185, 204, 0.7)"
+                    ],
+                    borderColor: [
+                        "rgba(78, 115, 223, 1)",
+                        "rgba(231, 74, 59, 1)",
+                        "rgba(246, 194, 62, 1)",
+                        "rgba(28, 200, 138, 1)",
+                        "rgba(133, 135, 150, 1)",
+                        "rgba(54, 185, 204, 1)"
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 10,
+                    data: frequencies
+                }]
+            },
+            options: {
+                // ... (rest of the options remain the same as in original code)
+            }
+        });
+
+    } catch (error) {
+        console.error('Dashboard initialization error:', error);
+    }
+}
+
+// Call initialization when the page loads
+document.addEventListener('DOMContentLoaded', initializeDashboard);
 // Pie Chart Example
 let ctx = document.getElementById("myPieChart");
 let myPieChart = new Chart(ctx, {

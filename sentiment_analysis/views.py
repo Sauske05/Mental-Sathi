@@ -1,7 +1,7 @@
 from asgiref.sync import sync_to_async
 from django.shortcuts import render
 import json
-from django.http import StreamingHttpResponse, JsonResponse
+from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import httpx
 import asyncio
@@ -14,7 +14,20 @@ from django.apps import apps
 from .models import SentimentModel as SentimentDB
 from sentiment_analysis.apps import SentimentAnalysisConfig
 from django.db import transaction
+
+from .serializers import SentimentSerializer
 # Create your views here.
+def get_user_sentiment_data(request, user_name):
+    try:
+        sentiment_obj = SentimentDB.objects.filter(user_name=user_name)
+    except SentimentDB.DoesNotExist:
+        return HttpResponse(status=404)
+    if request.method == "GET":
+        serializer = SentimentSerializer(sentiment_obj, many = True)
+        print(f'This is the serialized data: {JsonResponse(serializer.data, safe=False)}')
+        return JsonResponse(serializer.data, safe=False)
+
+
 def sentiment_page(request):
     return render(request, 'sentiment_tracker.html')
 

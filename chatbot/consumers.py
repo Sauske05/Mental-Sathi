@@ -88,7 +88,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             headers = {"Content-Type": "application/json"}
 
             async def stream_llm_response():
-                url = 'http://localhost:8080/chatbot'
+                url = 'http://localhost:2001/chatbot'
                 timeout = httpx.Timeout(120.0)
 
                 async with httpx.AsyncClient(timeout=timeout) as client:
