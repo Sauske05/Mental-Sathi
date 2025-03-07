@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from asgiref.sync import sync_to_async
 from django.shortcuts import render
 import json
@@ -5,6 +7,7 @@ from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import httpx
 import asyncio
+from django.db.models import Q
 
 from users.models import User
 from .bert_model.configure import *
@@ -17,15 +20,26 @@ from django.db import transaction
 
 from .serializers import SentimentSerializer
 # Create your views here.
+@csrf_exempt
 def get_user_sentiment_data(request, user_name):
-    try:
-        sentiment_obj = SentimentDB.objects.filter(user_name=user_name)
-    except SentimentDB.DoesNotExist:
-        return HttpResponse(status=404)
-    if request.method == "GET":
-        serializer = SentimentSerializer(sentiment_obj, many = True)
-        print(f'This is the serialized data: {JsonResponse(serializer.data, safe=False)}')
-        return JsonResponse(serializer.data, safe=False)
+    if request.method == "POST":
+        print('Trigger!')
+        data = json.loads(request.body)
+        duration = data.get("duration")
+        today_date = datetime.today().date()
+        try:
+            if duration == 'weekly':
+                sentiment_obj = SentimentDB.objects.filter(Q(user_name=user_name) & Q(date_time__gte = datetime.today().date() - timedelta(7)))
+            if duration == 'monthly':
+                sentiment_obj = SentimentDB.objects.filter(
+                        Q(user_name=user_name) & Q(date_time__gte=datetime.today().date() - timedelta(30)))
+            serializer = SentimentSerializer(sentiment_obj, many=True)
+            print(f'This is the serialized data: {JsonResponse(serializer.data, safe=False)}')
+            return JsonResponse(serializer.data, safe=False)
+        except SentimentDB.DoesNotExist:
+            return HttpResponse(status=404)
+
+
 
 
 def sentiment_page(request):

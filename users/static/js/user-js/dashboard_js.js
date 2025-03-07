@@ -10,26 +10,35 @@ let emotions_dict = {
     "Happy": 0, "Sad": 0, "Angry": 0, "Excited": 0, "Calm": 0, "Anxious": 0
 };
 
-async function getSentimentData() {
+async function getSentimentData(duration) {
     const url = `http://127.0.0.1:8000/sentiment/fetch_sentiment_data/arun`;
 
-  console.log('Attempting to fetch URL:', url);
-  console.log('Full resolved URL will be:', window.location.pathname + url);
-  //const url = `sentiment/fetch_sentiment_data/arun`;
-  //console.log(userName)
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Response status: ${response.status}`);
-    }
+    console.log('Attempting to fetch URL:', url);
+    console.log('Full resolved URL will be:', window.location.pathname + url);
+    //const url = `sentiment/fetch_sentiment_data/arun`;
+    //console.log(userName)
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
 
-    const json = await response.json();
-    console.log(json);
-    return json;
-  } catch (error) {
-    console.error('Error fetching sentiment data:', error.message);
-    return null;
-  }
+            },
+            body: JSON.stringify({
+                'duration': duration
+            })
+        });
+        if (!response.ok) {
+            throw new Error(`Response status: ${response.status}`);
+        }
+
+        const json = await response.json();
+        console.log(json);
+        return json;
+    } catch (error) {
+        console.error('Error fetching sentiment data:', error.message);
+        return null;
+    }
 }
 
 function updateEmotionDict(jsonData) {
@@ -42,19 +51,16 @@ function updateEmotionDict(jsonData) {
     });
 }
 
-// Initialization function to set up charts
-async function initializeDashboard() {
+async function initializeDashboard(duration) {
     try {
-        // Fetch sentiment data
-        const sentimentData = await getSentimentData();
+        const sentimentData = await getSentimentData(duration);
 
-        // Update emotion dictionary
+        Object.keys(emotions_dict).forEach(key => emotions_dict[key] = 0);
+
         updateEmotionDict(sentimentData);
 
-        // Update frequencies for bar chart
         let frequencies = Object.values(emotions_dict);
 
-        // Create or update bar chart
         new Chart(ctx_bar, {
             type: 'bar',
             data: {
@@ -83,7 +89,41 @@ async function initializeDashboard() {
                 }]
             },
             options: {
-                // ... (rest of the options remain the same as in original code)
+                maintainAspectRatio: false,
+                responsive: true,
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 25,
+                        top: 25,
+                        bottom: 0
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {color: "white", font: {size: 14}},
+                        grid: {display: false}
+                    },
+                    y: {
+                        ticks: {
+                            color: "white",
+                            font: {size: 14},
+                            padding: 10
+                        },
+                        grid: {
+                            color: "rgba(255,255,255,0.2)"
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false,
+                        labels: {
+                            color: "white",
+                            font: {size: 14}
+                        }
+                    }
+                }
             }
         });
 
@@ -93,35 +133,41 @@ async function initializeDashboard() {
 }
 
 // Call initialization when the page loads
-document.addEventListener('DOMContentLoaded', initializeDashboard);
+document.addEventListener('DOMContentLoaded', async function () {
+    await initializeDashboard('weekly');
+
+    document.getElementById('areaWeeklyButton').addEventListener('click', async () => await initializeDashboard('weekly'))
+    document.getElementById('areaMonthlyButton').addEventListener('click', async () => await initializeDashboard('monthly'))
+
+});
 // Pie Chart Example
 let ctx = document.getElementById("myPieChart");
 let myPieChart = new Chart(ctx, {
-  type: 'doughnut',
-  data: {
-    labels: ["Happy", "Sad", "Neutral"],
-    datasets: [{
-      data: [55, 30, 15],
-      backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc'],
-      hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf'],
-      hoverBorderColor: "rgba(234, 236, 244, 1)",
-    }],
-  },
-  options: {
-    maintainAspectRatio: false,
-    tooltips: {
-      backgroundColor: "rgb(255,255,255)",
-      bodyFontColor: "#858796",
-      borderColor: '#dddfeb',
-      borderWidth: 1,
-      xPadding: 15,
-      yPadding: 15,
-      displayColors: false,
-      caretPadding: 10,
+    type: 'doughnut',
+    data: {
+        labels: ["Happy", "Sad", "Neutral"],
+        datasets: [{
+            data: [55, 30, 15],
+            backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc'],
+            hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf'],
+            hoverBorderColor: "rgba(234, 236, 244, 1)",
+        }],
     },
-    legend: {
-      display: false
+    options: {
+        maintainAspectRatio: false,
+        tooltips: {
+            backgroundColor: "rgb(255,255,255)",
+            bodyFontColor: "#858796",
+            borderColor: '#dddfeb',
+            borderWidth: 1,
+            xPadding: 15,
+            yPadding: 15,
+            displayColors: false,
+            caretPadding: 10,
+        },
+        legend: {
+            display: false
+        },
+        cutoutPercentage: 80,
     },
-    cutoutPercentage: 80,
-  },
 });
