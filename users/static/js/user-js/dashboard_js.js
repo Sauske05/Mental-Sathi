@@ -11,7 +11,7 @@ let emotions_dict = {
 };
 
 async function getSentimentData(duration) {
-    const url = `http://127.0.0.1:8000/sentiment/fetch_sentiment_data/arun`;
+    const url = `http://127.0.0.1:8000/sentiment/fetch_sentiment_data/jarun6069@gmail.com`;
 
     console.log('Attempting to fetch URL:', url);
     console.log('Full resolved URL will be:', window.location.pathname + url);

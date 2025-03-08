@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    'social_django',
     'users.apps.UsersConfig',
 ]
 
@@ -70,6 +71,7 @@ MIDDLEWARE = [
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
     'django.contrib.auth.backends.ModelBackend',
+    'social_core.backends.google.GoogleOAuth2',
 
     # `allauth` specific authentication methods, such as login by email
     'allauth.account.auth_backends.AuthenticationBackend',
@@ -93,6 +95,10 @@ SOCIALACCOUNT_PROVIDERS["google"]["APP"] = {
     "secret": os.getenv('CLIENT_SECRET'),
 }
 
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv('CLIENT_ID')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('CLIENT_SECRET')
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/dashboard/'
 # Django allauth config
 SITE_ID = 1
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
@@ -100,7 +106,7 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_LOGIN_METHODS =  {'email'}
-LOGIN_REDIRECT_URL = '/dashboard/'
+LOGIN_REDIRECT_URL = '/login/'
 SOCIALACCOUNT_ADAPTER = "MentalSathi.adapters.MySocialAccountAdapter"
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"

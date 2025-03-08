@@ -66,8 +66,44 @@ def login_view(request):
                     messages.error(request, "Invalid password.")
             except CustomUser.DoesNotExist:
                 messages.error(request, "User does not exist.")
-    # else:
-    #     form = LoginForm()
+
+    if isinstance(request.user, CustomUser):
+        print(request.user)
+        user_obj = request.user
+        try:
+            # Check if user exists
+            user = CustomUser.objects.get(email=user_obj.email)
+            print(f'User Object Check: {user}')
+            dashboard_detail = DashboardRecords.objects.get(user_name=user)
+            print(f'The email test: {user.email}')
+            request.session['user_id'] = user.email
+            # Updating the dashboard
+            current_time = datetime.now(NEPAL_TZ)
+
+            current_date = current_time.date()
+            last_login_date = dashboard_detail.last_login_date
+
+            if not last_login_date:
+                dashboard_detail.login_streak = 1
+                dashboard_detail.number_of_login_days = 1
+            if last_login_date:
+                last_login_date = last_login_date.date()
+                if last_login_date == current_date:
+                    pass
+                elif last_login_date == current_date - timedelta(days=1):
+                    dashboard_detail.login_streak += 1
+                    dashboard_detail.number_of_login_days += 1
+                else:
+                    dashboard_detail.login_streak = 0
+                    dashboard_detail.number_of_login_days += 1
+            dashboard_detail.last_login_date = current_date
+
+            dashboard_detail.save()
+            # messages.success(request, "Login successful!")
+        except CustomUser.DoesNotExist:
+            messages.error(request, "User does not exist.")
+        return redirect(user_dashboard, )
+
 
     #return render(request, 'users/Login_page.html', {'form': form})
     return render(request, 'user_template/Login_page.html')
@@ -199,8 +235,8 @@ def admin_tables(request):
     return render(request, 'admin/tables.html')
 
 def user_dashboard(request):
-    user_name = request.session.get('user_id')
-    user = CustomUser.objects.get(email=user_name)
+    user_email = request.session.get('user_id')
+    user = CustomUser.objects.get(email=user_email)
     print(user)
     print('Here')
     user_details = DashboardRecords.objects.get(user_name=user)
@@ -214,3 +250,11 @@ def user_charts(request):
 
 def user_error(request):
     return render(request, 'user_template/404.html')
+
+
+from django.contrib.auth import logout
+
+def logout_view(request):
+    logout(request)
+    request.session.flush()
+    return redirect('login')

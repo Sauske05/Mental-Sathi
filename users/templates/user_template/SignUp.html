@@ -1,4 +1,5 @@
 {% load static %}
+{% load socialaccount %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,6 +41,7 @@
             </div>
 
             <button type="submit">CREATE ACCOUNT</button>
+                                    <a href="{% provider_login_url 'google' %}">Signup with Google</a>
             {{ message }}
             <p class="conditions">Already have an account? <a href="{% url 'login' %}">Sign in</a></p>
 

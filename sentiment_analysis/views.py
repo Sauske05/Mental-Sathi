@@ -17,22 +17,40 @@ from django.apps import apps
 from .models import SentimentModel as SentimentDB
 from sentiment_analysis.apps import SentimentAnalysisConfig
 from django.db import transaction
-
+from users.models import CustomUser
 from .serializers import SentimentSerializer
+
+from django.http import HttpResponse
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.graphics.shapes import Drawing
+from reportlab.graphics.charts.barcharts import VerticalBarChart
+from reportlab.graphics.charts.piecharts import Pie
+from reportlab.graphics.charts.linecharts import HorizontalLineChart
+from reportlab.graphics.charts.legends import Legend
+from io import BytesIO
+import matplotlib.pyplot as plt
+import numpy as np
+import base64
 # Create your views here.
 @csrf_exempt
-def get_user_sentiment_data(request, user_name):
+def get_user_sentiment_data(request, user_email):
     if request.method == "POST":
         print('Trigger!')
+        print(user_email)
         data = json.loads(request.body)
         duration = data.get("duration")
-        today_date = datetime.today().date()
+        user_obj = CustomUser.objects.get(email=user_email)
+        #today_date = datetime.today().date()
         try:
             if duration == 'weekly':
-                sentiment_obj = SentimentDB.objects.filter(Q(user_name=user_name) & Q(date_time__gte = datetime.today().date() - timedelta(7)))
+                sentiment_obj = SentimentDB.objects.filter(Q(user_name=user_obj) & Q(date_time__gte = datetime.today().date() - timedelta(7)))
             if duration == 'monthly':
                 sentiment_obj = SentimentDB.objects.filter(
-                        Q(user_name=user_name) & Q(date_time__gte=datetime.today().date() - timedelta(30)))
+                        Q(user_name=user_obj) & Q(date_time__gte=datetime.today().date() - timedelta(30)))
             serializer = SentimentSerializer(sentiment_obj, many=True)
             print(f'This is the serialized data: {JsonResponse(serializer.data, safe=False)}')
             return JsonResponse(serializer.data, safe=False)
@@ -130,3 +148,284 @@ async def sentiment_process(request):
                 return JsonResponse({"error": "Invalid JSON"}, status=400)
             except Exception as e:
                 return JsonResponse({"error": str(e)}, status=500)
+
+
+def generate_sentiment_report_pdf(request, user_id):
+    user = request.user
+    sentiment_data = get_user_sentiment_data_report(user_id)
+
+    # Create a file-like buffer to receive PDF data
+    buffer = BytesIO()
+
+    # Create the PDF object using the buffer as its "file"
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+
+    # Container for the 'Flowable' objects
+    elements = []
+
+    # Styles
+    styles = getSampleStyleSheet()
+    title_style = styles['Heading1']
+    subtitle_style = styles['Heading2']
+    normal_style = styles['Normal']
+
+    # Custom styles
+    header_style = ParagraphStyle(
+        'HeaderStyle',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.gray
+    )
+
+    # Add company logo/header
+    # elements.append(Image('path/to/logo.png', width=2*inch, height=0.5*inch))
+
+    # Add report title
+    elements.append(Paragraph("Sentiment Analysis Report", title_style))
+
+    # Add timestamp
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    elements.append(Paragraph(f"Generated on: {current_time}", header_style))
+    elements.append(Spacer(1, 0.2 * inch))
+
+    # User Information Section
+    elements.append(Paragraph("User Information", subtitle_style))
+
+    # User details table
+    user_data = [
+        ["Username:", user.username],
+        ["Full Name:", f"{user.first_name} {user.last_name}"],
+        ["Email:", user.email],
+        ["Last Login:", user.last_login.strftime("%Y-%m-%d %H:%M:%S") if user.last_login else "Never"],
+        ["Account Created:", user.date_joined.strftime("%Y-%m-%d %H:%M:%S")]
+    ]
+
+    user_table = Table(user_data, colWidths=[1.5 * inch, 4 * inch])
+    user_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.black),
+        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 0.25, colors.grey),
+    ]))
+
+    elements.append(user_table)
+    elements.append(Spacer(1, 0.3 * inch))
+
+    # Summary Section
+    elements.append(Paragraph("Sentiment Analysis Summary", subtitle_style))
+
+    # Example sentiment summary
+    sentiment_summary = f"""
+    This report provides an analysis of sentiment data collected from your account interactions.
+    Overall Sentiment Score: {sentiment_data['overall_score']:.2f}/10
+    Total Items Analyzed: {sentiment_data['total_items']}
+    Period: {sentiment_data['start_date']} to {sentiment_data['end_date']}
+    """
+    elements.append(Paragraph(sentiment_summary, normal_style))
+    elements.append(Spacer(1, 0.3 * inch))
+
+    # Add pie chart for sentiment distribution
+    elements.append(Paragraph("Sentiment Distribution", subtitle_style))
+
+    # Create the pie chart
+    drawing = Drawing(400, 200)
+    pie = Pie()
+    pie.x = 150
+    pie.y = 50
+    pie.width = 100
+    pie.height = 100
+    pie.data = [sentiment_data['positive_percentage'],
+                sentiment_data['neutral_percentage'],
+                sentiment_data['negative_percentage']]
+    pie.labels = ['Positive', 'Neutral', 'Negative']
+    pie.slices.strokeWidth = 0.5
+    pie.slices[0].fillColor = colors.green
+    pie.slices[1].fillColor = colors.yellow
+    pie.slices[2].fillColor = colors.red
+
+    # Add a legend
+    legend = Legend()
+    legend.alignment = 'right'
+    legend.x = 280
+    legend.y = 90
+    legend.colorNamePairs = [(colors.green, 'Positive'),
+                             (colors.yellow, 'Neutral'),
+                             (colors.red, 'Negative')]
+
+    drawing.add(pie)
+    drawing.add(legend)
+    elements.append(drawing)
+    elements.append(Spacer(1, 0.2 * inch))
+
+    # Add time series chart for sentiment trends
+    elements.append(Paragraph("Sentiment Trends Over Time", subtitle_style))
+
+    # Create the line chart
+    drawing = Drawing(400, 200)
+
+    lc = HorizontalLineChart()
+    lc.x = 50
+    lc.y = 50
+    lc.height = 125
+    lc.width = 300
+    lc.data = [sentiment_data['trend_data']]
+    lc.lines[0].strokeColor = colors.blue
+    #lc.lines[0].symbol = makeMarker('Circle')
+
+    # Configure x axis
+    lc.categoryAxis.categoryNames = sentiment_data['trend_dates']
+    lc.categoryAxis.labels.boxAnchor = 'ne'
+    lc.categoryAxis.labels.angle = 30
+    lc.categoryAxis.labels.dy = -10
+
+    # Configure y axis
+    lc.valueAxis.valueMin = 0
+    lc.valueAxis.valueMax = 10
+    lc.valueAxis.valueStep = 1
+
+    drawing.add(lc)
+    elements.append(drawing)
+    elements.append(Spacer(1, 0.2 * inch))
+
+    # Add topic sentiment breakdown
+    elements.append(Paragraph("Sentiment by Topic", subtitle_style))
+
+    # Create the bar chart
+    drawing = Drawing(400, 200)
+
+    bc = VerticalBarChart()
+    bc.x = 50
+    bc.y = 50
+    bc.height = 125
+    bc.width = 300
+    bc.data = [sentiment_data['topic_scores']]
+    bc.bars[0].fillColor = colors.steelblue
+
+    # Configure x axis
+    bc.categoryAxis.categoryNames = sentiment_data['topics']
+    bc.categoryAxis.labels.boxAnchor = 'ne'
+    bc.categoryAxis.labels.angle = 30
+    bc.categoryAxis.labels.dy = -10
+
+    # Configure y axis
+    bc.valueAxis.valueMin = 0
+    bc.valueAxis.valueMax = 10
+    bc.valueAxis.valueStep = 1
+
+    drawing.add(bc)
+    elements.append(drawing)
+    elements.append(Spacer(1, 0.3 * inch))
+
+    # Detailed findings section
+    elements.append(Paragraph("Detailed Findings", subtitle_style))
+
+    # Create table for detailed sentiment items
+    detailed_data = [["Date", "Source", "Text", "Sentiment"]]
+
+    # Add sample sentiment items
+    for item in sentiment_data['detailed_items']:
+        sentiment_text = item['sentiment']
+        color = colors.green if item['sentiment'] == 'Positive' else colors.red if item[
+                                                                                       'sentiment'] == 'Negative' else colors.orange
+        detailed_data.append([
+            item['date'],
+            item['source'],
+            Paragraph(item['text'][:100] + "..." if len(item['text']) > 100 else item['text'], normal_style),
+            sentiment_text
+        ])
+
+    detailed_table = Table(detailed_data, colWidths=[1 * inch, 1 * inch, 3.5 * inch, 1 * inch])
+    detailed_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+        ('GRID', (0, 0), (-1, -1), 0.25, colors.grey),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+
+    elements.append(detailed_table)
+
+    # Add footer
+    elements.append(Spacer(1, 0.5 * inch))
+    elements.append(Paragraph(
+        "This report is confidential and generated automatically. For questions or support, please contact support@yourcompany.com",
+        header_style))
+
+    # Build the PDF
+    doc.build(elements)
+
+    # Get the value of the BytesIO buffer and write response
+    pdf = buffer.getvalue()
+    buffer.close()
+
+    # Create HTTP response with PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="sentiment_report_{user.username}_{current_time}.pdf"'
+    response.write(pdf)
+
+    return response
+
+
+# Helper function to get sentiment data
+def get_user_sentiment_data_report(user_id):
+    # This is a placeholder - replace with your actual data retrieval logic
+    # In a real application, this would query your sentiment analysis database
+
+    # Mock data for demonstration
+    return {
+        'overall_score': 7.8,
+        'total_items': 243,
+        'start_date': '2025-01-01',
+        'end_date': '2025-03-01',
+        'positive_percentage': 65,
+        'neutral_percentage': 20,
+        'negative_percentage': 15,
+        'trend_data': [7.2, 7.5, 7.1, 7.8, 8.2, 7.9, 8.0, 7.7],
+        'trend_dates': ['Jan 1', 'Jan 8', 'Jan 15', 'Jan 22', 'Feb 1', 'Feb 8', 'Feb 15', 'Feb 22'],
+        'topics': ['Product', 'Service', 'Support', 'Pricing', 'Interface'],
+        'topic_scores': [8.2, 7.5, 6.8, 7.2, 8.5],
+        'detailed_items': [
+            {
+                'date': '2025-02-28',
+                'source': 'Email',
+                'text': 'I really appreciate the quick response from your team. The product works perfectly now!',
+                'sentiment': 'Positive'
+            },
+            {
+                'date': '2025-02-25',
+                'source': 'Chat',
+                'text': 'The interface is confusing and I had trouble finding the settings section.',
+                'sentiment': 'Negative'
+            },
+            {
+                'date': '2025-02-20',
+                'source': 'Survey',
+                'text': 'Overall satisfied with the service but would like to see more features added in the future.',
+                'sentiment': 'Neutral'
+            },
+            {
+                'date': '2025-02-15',
+                'source': 'Review',
+                'text': 'Excellent product, has saved me hours of work every week!',
+                'sentiment': 'Positive'
+            },
+            {
+                'date': '2025-02-10',
+                'source': 'Support',
+                'text': 'The new update resolved all previous issues I was experiencing. Very happy with the improvements.',
+                'sentiment': 'Positive'
+            }
+        ]
+    }
+
+
+# Helper function to create markers for line charts
+def makeMarker(name):
+    from reportlab.graphics.shapes import Circle
+    if name == 'Circle':
+        return Circle(3, cy=3, r = 2, fillColor=colors.blue)

@@ -23,6 +23,7 @@ from .views import index, header
 from sentiment_analysis import views as sentiment_views
 urlpatterns = [
         path("admin/", admin.site.urls),
+        path('social-auth/', include('social_django.urls', namespace='social')),
         path("accounts/", include("allauth.urls")),
         path("", index, name="index"),
         path('signup/', user_views.signup, name='signup'),
@@ -31,6 +32,7 @@ urlpatterns = [
         path('sentiment/', include('sentiment_analysis.urls')),
         path('user/', include('users.urls')),
         path('login/', user_views.login_view, name = 'login'),
+        path('logout/', user_views.logout_view, name = 'logout'),
         path('homepage/', user_views.homepage, name = 'homepage'),
 
         path('admin_dashboard/', user_views.admin_dashboard, name = 'admin_dashboard'),
