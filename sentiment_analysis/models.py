@@ -1,9 +1,9 @@
 from django.db import models
-from users.models import User
+from users.models import CustomUser
 import datetime
 # Create your models here.
 class SentimentModel(models.Model):
-    user_name = models.ForeignKey(User, on_delete=models.CASCADE, to_field='user_name')
+    user_name = models.ForeignKey(CustomUser, on_delete=models.CASCADE, to_field='email')
     sentiment_data  = models.CharField(max_length=120, )
     recommendation_text = models.TextField()
     user_query = models.TextField()

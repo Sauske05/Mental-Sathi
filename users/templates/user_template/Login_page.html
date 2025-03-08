@@ -1,3 +1,4 @@
+{% load socialaccount %}
 {#{% load static %}#}
 {#Template tags#}
 {#<!DOCTYPE html>#}
@@ -236,6 +237,7 @@
                         <button type="submit" class="btn btn-primary btn-lg px-5">
                             Login
                         </button>
+                        <a href="{% provider_login_url 'google' %}">Login with Google</a>
                         <p class="small fw-bold mt-2 pt-1 mb-0">
                             Don't have an account?
                             <a href="{% url 'signup' %}" class="link-danger">Register</a>

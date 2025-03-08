@@ -23,6 +23,7 @@ from .views import index, header
 from sentiment_analysis import views as sentiment_views
 urlpatterns = [
         path("admin/", admin.site.urls),
+        path("accounts/", include("allauth.urls")),
         path("", index, name="index"),
         path('signup/', user_views.signup, name='signup'),
         path('header/', header, name = 'header'),

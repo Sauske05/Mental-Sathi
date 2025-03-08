@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
-from .models import User
+from .models import User, CustomUser
+
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -10,4 +12,8 @@ class UserSerializer(serializers.ModelSerializer):
             'password',
             'created_at'
         ]
+class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        exclude = ["password"]
 

@@ -9,13 +9,14 @@ from django.contrib.auth.hashers import check_password
 from django.contrib import messages
 from django.contrib.sessions.models import Session
 from .forms import LoginForm
-from .models import User
+from .models import CustomUser
 from .models import DashboardRecords
 from datetime import timedelta, datetime
 from django.utils.timezone import now
+from django.contrib.auth import get_user_model
 import pytz
 from django.db import transaction
-from users.serializers import UserSerializer
+from users.serializers import CustomUserSerializer
 NEPAL_TZ = pytz.timezone('Asia/Kathmandu')
 def login_view(request):
     if request.method == "POST":
@@ -28,12 +29,13 @@ def login_view(request):
 
             try:
                 # Check if user exists
-                user = User.objects.get(email=email)
+                user = CustomUser.objects.get(email=email)
                 dashboard_detail = DashboardRecords.objects.get(user_name=user)
+                print(f'The email test: {user.email}')
                 # Check password
                 if check_password(password, user.password):
                     # Start session
-                    request.session['user_id'] = user.user_name
+                    request.session['user_id'] = user.email
                     #Updating the dashboard
                     current_time = datetime.now(NEPAL_TZ)
 
@@ -62,7 +64,7 @@ def login_view(request):
                     return redirect(user_dashboard, )  # Redirect to your homepage URL name
                 else:
                     messages.error(request, "Invalid password.")
-            except User.DoesNotExist:
+            except CustomUser.DoesNotExist:
                 messages.error(request, "User does not exist.")
     # else:
     #     form = LoginForm()
@@ -78,11 +80,11 @@ def view_login(request):
 def get_user_data(request, user_name):
         try:
             #user_name = request.POST.get('user_name')
-            user_obj = User.objects.get(user_name=user_name)
-        except User.DoesNotExist:
+            user_obj = CustomUser.objects.get(first_name=user_name)
+        except CustomUser.DoesNotExist:
             return HttpResponse(status=404)
         if request.method == "GET":
-            serializer = UserSerializer(user_obj)
+            serializer = CustomUserSerializer(user_obj)
             return JsonResponse(serializer.data, safe=False)
 def homepage(request):
     user_id = request.session.get('user_id')
@@ -119,11 +121,11 @@ def signup_authentication(func):
                 message = "Passwords do not match."
                 return render(request, 'user_template/SignUp.html', {'message': message})
 
-            if User.objects.filter(user_name=name).exists():
-                message = "User already exists."
-                return render(request, 'user_template/SignUp.html', {'message': message})
+            # if CustomUser.objects.filter(user_name=name).exists():
+            #     message = "User already exists."
+            #     return render(request, 'user_template/SignUp.html', {'message': message})
 
-            if User.objects.filter(email=email).exists():
+            if CustomUser.objects.filter(email=email).exists():
                 message = "Email is already in use."
                 return render(request, 'user_template/SignUp.html', {'message': message})
 
@@ -147,10 +149,12 @@ def signup(request):
             # print(f'This is the user_data {user_data.get("name")}')
             # #print(f'user_data {user_data.keys()}')
             with transaction.atomic():
-                user = User(user_name=user_data.get("name"), password=user_data.get("password"), email=user_data.get("email"))
+                user = CustomUser(first_name=user_data.get("name"), last_name=user_data.get("name"), password=user_data.get("password"), email=user_data.get("email"))
                 user.save()
-                user = User.objects.get(user_name=user_data.get("name"))
-                dashboard_init = DashboardRecords(user_name=user, login_streak=0, number_of_login_days=0, positive_streak=0)
+                #User = get_user_model()
+                user_filter = CustomUser.objects.get(email=user_data.get("email"))
+                print(user_filter)
+                dashboard_init = DashboardRecords(user_name=user_filter, login_streak=0, number_of_login_days=0, positive_streak=0)
                 dashboard_init.save()
             messages.success(request, "Account created successfully! Please log in.")
             return render(request, 'user_template/Login_page.html')
@@ -196,7 +200,10 @@ def admin_tables(request):
 
 def user_dashboard(request):
     user_name = request.session.get('user_id')
-    user_details = DashboardRecords.objects.get(user_name=user_name)
+    user = CustomUser.objects.get(email=user_name)
+    print(user)
+    print('Here')
+    user_details = DashboardRecords.objects.get(user_name=user)
     return render(request, 'user_template/index.html', {'user_details' : user_details})
 
 def user_profile(request):
