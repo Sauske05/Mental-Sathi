@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import datetime, timedelta
 
 from asgiref.sync import sync_to_async
@@ -8,7 +9,8 @@ from django.views.decorators.csrf import csrf_exempt
 import httpx
 import asyncio
 from django.db.models import Q
-
+from .models import SentimentModel
+import statistics
 from users.models import User
 from .bert_model.configure import *
 from .bert_model.tokenizer import *
@@ -51,6 +53,8 @@ def get_user_sentiment_data(request, user_email):
             if duration == 'monthly':
                 sentiment_obj = SentimentDB.objects.filter(
                         Q(user_name=user_obj) & Q(date_time__gte=datetime.today().date() - timedelta(30)))
+            if duration == 'all_time':
+                sentiment_obj = SentimentDB.objects.filter(user_name=user_obj)
             serializer = SentimentSerializer(sentiment_obj, many=True)
             print(f'This is the serialized data: {JsonResponse(serializer.data, safe=False)}')
             return JsonResponse(serializer.data, safe=False)
@@ -82,18 +86,41 @@ async def bert_inference(input_text, bert_model):
 @sync_to_async
 def process_initial_data(request, feelings_text, emotion, bert_analysis):
     try:
-        with transaction.atomic():
-            user_name_session = request.session['user_id']
-            user_name = User.objects.get(user_name=user_name_session)
-            sentiment_obj = SentimentDB(
-                user_name=user_name,
-                sentiment_data=emotion,
-                recommendation_text='',  # Will update later
-                user_query=feelings_text,
-                query_sentiment=bert_analysis
-            )
-            sentiment_obj.save()
-            return sentiment_obj.id  # Return ID to retrieve later
+        score = {
+            'Suicidal' : -1.0,
+            'Depression': -0.9,
+            'Anxiety': -0.7,
+            'Personality disorder': -0.6,
+            'Anxious' : -0.4,
+            'Sad': -0.5,
+            'Angry' : -0.4,
+            'Calm' : -0.0,
+            'Normal' : 0.3,
+            'Excited' : 0.7,
+            'Happy' : 0.9
+        }
+        try:
+            assert emotion in score.keys()
+            if bert_analysis:
+                average_score = (score[emotion] + score[bert_analysis]) /2
+            else:
+                average_score = score[emotion]
+            with transaction.atomic():
+                user_name_session = request.session['user_id']
+                user_name = User.objects.get(user_name=user_name_session)
+                sentiment_obj = SentimentDB(
+                    user_name=user_name,
+                    sentiment_data=emotion,
+                    sentiment_score=average_score,
+                    recommendation_text='',  # Will update later
+                    user_query=feelings_text,
+                    query_sentiment=bert_analysis
+                )
+                sentiment_obj.save()
+                return sentiment_obj.id
+        except AssertionError as e:
+            print(e)
+
     except Exception as e:
         print(f"Error saving initial data: {e}")
         return None
@@ -193,7 +220,6 @@ def generate_sentiment_report_pdf(request, user_id):
 
     # User details table
     user_data = [
-        ["Username:", user.username],
         ["Full Name:", f"{user.first_name} {user.last_name}"],
         ["Email:", user.email],
         ["Last Login:", user.last_login.strftime("%Y-%m-%d %H:%M:%S") if user.last_login else "Never"],
@@ -282,9 +308,9 @@ def generate_sentiment_report_pdf(request, user_id):
     lc.categoryAxis.labels.dy = -10
 
     # Configure y axis
-    lc.valueAxis.valueMin = 0
-    lc.valueAxis.valueMax = 10
-    lc.valueAxis.valueStep = 1
+    lc.valueAxis.valueMin = -1
+    lc.valueAxis.valueMax = 1
+    lc.valueAxis.valueStep = 0.2
 
     drawing.add(lc)
     elements.append(drawing)
@@ -353,7 +379,7 @@ def generate_sentiment_report_pdf(request, user_id):
     # Add footer
     elements.append(Spacer(1, 0.5 * inch))
     elements.append(Paragraph(
-        "This report is confidential and generated automatically. For questions or support, please contact support@yourcompany.com",
+        "This report is confidential and generated automatically. For questions or support, please contact islingtoncollege.edu.np",
         header_style))
 
     # Build the PDF
@@ -371,24 +397,52 @@ def generate_sentiment_report_pdf(request, user_id):
     return response
 
 
-# Helper function to get sentiment data
-def get_user_sentiment_data_report(user_id):
-    # This is a placeholder - replace with your actual data retrieval logic
-    # In a real application, this would query your sentiment analysis database
 
-    # Mock data for demonstration
+def get_user_sentiment_data_report(user_id):
+    sentiment_obj = SentimentModel.objects.filter(user_name=user_id)
+    sentiment_scores = list(sentiment_obj.values_list('sentiment_score', flat=True))
+    sentiment_scores = [score for score in sentiment_scores if isinstance(score, float)]
+    overall_score = statistics.mean(sentiment_scores) if sentiment_scores else 0
+    sentiment_labels = list(sentiment_obj.values_list('sentiment_data', flat=True))
+    sentiment_dict = dict(Counter(sentiment_labels))
+    date_objects = list(sentiment_obj.values_list('date_time', flat=True))
+    date_objects.sort()
+    trend_dates = []
+    for date in date_objects:
+        if isinstance(date, datetime):
+            formatted_date = date.strftime('%b %d')
+            trend_dates.append(formatted_date)
+
+    total_items = sentiment_obj.count()
+    start_date = min(date_objects) if date_objects else None
+    end_date = max(date_objects) if date_objects else None
+
+    if sentiment_scores:
+        positive_scores = sum(1 for score in sentiment_scores if score > 0.0)
+        neutral_scores = sum(1 for score in sentiment_scores if score == 0.0)
+        negative_scores = sum(1 for score in sentiment_scores if score < 0.0)
+
+        total_count = len(sentiment_scores)
+        positive_percentage = round((positive_scores / total_count) * 100)
+        neutral_percentage = round((neutral_scores / total_count) * 100)
+        negative_percentage = round((negative_scores / total_count) * 100)
+    else:
+        positive_percentage = 0
+        neutral_percentage = 0
+        negative_percentage = 0
+
     return {
-        'overall_score': 7.8,
-        'total_items': 243,
-        'start_date': '2025-01-01',
-        'end_date': '2025-03-01',
-        'positive_percentage': 65,
-        'neutral_percentage': 20,
-        'negative_percentage': 15,
-        'trend_data': [7.2, 7.5, 7.1, 7.8, 8.2, 7.9, 8.0, 7.7],
-        'trend_dates': ['Jan 1', 'Jan 8', 'Jan 15', 'Jan 22', 'Feb 1', 'Feb 8', 'Feb 15', 'Feb 22'],
-        'topics': ['Product', 'Service', 'Support', 'Pricing', 'Interface'],
-        'topic_scores': [8.2, 7.5, 6.8, 7.2, 8.5],
+        'overall_score': overall_score,
+        'total_items': total_items,
+        'start_date': start_date,
+        'end_date': end_date,
+        'positive_percentage': positive_percentage,
+        'neutral_percentage': neutral_percentage,
+        'negative_percentage': negative_percentage,
+        'trend_data': sentiment_scores,
+        'trend_dates': trend_dates,
+        'topics': list(sentiment_dict.keys()),
+        'topic_scores': list(sentiment_dict.values()),
         'detailed_items': [
             {
                 'date': '2025-02-28',

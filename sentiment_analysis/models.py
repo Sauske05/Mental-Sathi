@@ -7,6 +7,7 @@ class SentimentModel(models.Model):
     sentiment_data  = models.CharField(max_length=120, )
     recommendation_text = models.TextField()
     user_query = models.TextField()
+    sentiment_score = models.FloatField(default = None)
     date_time = models.DateTimeField(default=datetime.datetime.now())
     query_sentiment = models.CharField(max_length=120, default='')
 

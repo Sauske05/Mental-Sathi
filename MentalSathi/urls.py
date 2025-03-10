@@ -19,13 +19,14 @@ from django.contrib import admin
 from django.urls import path, include
 #from users.views import view_login
 from users import views as user_views
-from .views import index, header
+from .views import index, header, get_session
 from sentiment_analysis import views as sentiment_views
 urlpatterns = [
         path("admin/", admin.site.urls),
         path('social-auth/', include('social_django.urls', namespace='social')),
         path("accounts/", include("allauth.urls")),
         path("", index, name="index"),
+        path('get_session/', get_session, name = 'get_session'),
         path('signup/', user_views.signup, name='signup'),
         path('header/', header, name = 'header'),
         path('api/', include('api.urls')),
