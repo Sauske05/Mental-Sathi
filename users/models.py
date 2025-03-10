@@ -27,9 +27,10 @@ class User(models.Model):
 class CustomUser(AbstractUser):
     username = None
     email = models.EmailField('email address',unique=True)
+    profile_picture = models.URLField(blank=True, null=True)
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS =['*']
-    objects = UserManager()
+    REQUIRED_FIELDS =['first_name', 'last_name']
+    #objects = UserManager()
 
     class Meta:
         verbose_name = 'User'

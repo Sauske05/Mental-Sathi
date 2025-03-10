@@ -67,42 +67,42 @@ def login_view(request):
             except CustomUser.DoesNotExist:
                 messages.error(request, "User does not exist.")
 
-    if isinstance(request.user, CustomUser):
-        print(request.user)
-        user_obj = request.user
-        try:
-            # Check if user exists
-            user = CustomUser.objects.get(email=user_obj.email)
-            print(f'User Object Check: {user}')
-            dashboard_detail = DashboardRecords.objects.get(user_name=user)
-            print(f'The email test: {user.email}')
-            request.session['user_id'] = user.email
-            # Updating the dashboard
-            current_time = datetime.now(NEPAL_TZ)
-
-            current_date = current_time.date()
-            last_login_date = dashboard_detail.last_login_date
-
-            if not last_login_date:
-                dashboard_detail.login_streak = 1
-                dashboard_detail.number_of_login_days = 1
-            if last_login_date:
-                last_login_date = last_login_date.date()
-                if last_login_date == current_date:
-                    pass
-                elif last_login_date == current_date - timedelta(days=1):
-                    dashboard_detail.login_streak += 1
-                    dashboard_detail.number_of_login_days += 1
-                else:
-                    dashboard_detail.login_streak = 0
-                    dashboard_detail.number_of_login_days += 1
-            dashboard_detail.last_login_date = current_date
-
-            dashboard_detail.save()
-            # messages.success(request, "Login successful!")
-        except CustomUser.DoesNotExist:
-            messages.error(request, "User does not exist.")
-        return redirect(user_dashboard, )
+    # if isinstance(request.user, CustomUser):
+    #     print(request.user)
+    #     user_obj = request.user
+    #     try:
+    #         # Check if user exists
+    #         user = CustomUser.objects.get(email=user_obj.email)
+    #         print(f'User Object Check: {user}')
+    #         dashboard_detail = DashboardRecords.objects.get(user_name=user)
+    #         print(f'The email test: {user.email}')
+    #         request.session['user_id'] = user.email
+    #         # Updating the dashboard
+    #         current_time = datetime.now(NEPAL_TZ)
+    #
+    #         current_date = current_time.date()
+    #         last_login_date = dashboard_detail.last_login_date
+    #
+    #         if not last_login_date:
+    #             dashboard_detail.login_streak = 1
+    #             dashboard_detail.number_of_login_days = 1
+    #         if last_login_date:
+    #             last_login_date = last_login_date.date()
+    #             if last_login_date == current_date:
+    #                 pass
+    #             elif last_login_date == current_date - timedelta(days=1):
+    #                 dashboard_detail.login_streak += 1
+    #                 dashboard_detail.number_of_login_days += 1
+    #             else:
+    #                 dashboard_detail.login_streak = 0
+    #                 dashboard_detail.number_of_login_days += 1
+    #         dashboard_detail.last_login_date = current_date
+    #
+    #         dashboard_detail.save()
+    #         # messages.success(request, "Login successful!")
+    #     except CustomUser.DoesNotExist:
+    #         messages.error(request, "User does not exist.")
+    #     return redirect(user_dashboard, )
 
 
     #return render(request, 'users/Login_page.html', {'form': form})
@@ -137,14 +137,15 @@ def signup_authentication(func):
     @wraps(func)
     def wrapper(request, **kwargs):
         if request.method == 'POST':
-            name = request.POST.get('name')
+            first_name = request.POST.get('first_name')
+            last_name = request.POST.get('last_name')
             email = request.POST.get('email')
             password = request.POST.get('password')
             retype_password = request.POST.get('re_password')
             agree_terms = request.POST.get('terms_checkbox')
 
             # Validation checks
-            if not name or not email or not password or not retype_password:
+            if not first_name or not last_name or not email or not password or not retype_password:
                 message = 'All fields are required'
                 # messages.error(request, "All fields are required.")
                 return render(request, 'user_template/SignUp.html', {'message': message})
@@ -171,7 +172,8 @@ def signup_authentication(func):
                 return render(request, 'user_template/SignUp.html', {'message': message})
 
             request.clean_data = {
-                'name' : name,
+                'first_name' : first_name,
+                'last_name' : last_name,
                 'email' : email,
                 'password' : password
             }
@@ -185,7 +187,7 @@ def signup(request):
             # print(f'This is the user_data {user_data.get("name")}')
             # #print(f'user_data {user_data.keys()}')
             with transaction.atomic():
-                user = CustomUser(first_name=user_data.get("name"), last_name=user_data.get("name"), password=user_data.get("password"), email=user_data.get("email"))
+                user = CustomUser(first_name=user_data.get("first_name"), last_name=user_data.get("last_name"), password=user_data.get("password"), email=user_data.get("email"))
                 user.save()
                 #User = get_user_model()
                 user_filter = CustomUser.objects.get(email=user_data.get("email"))

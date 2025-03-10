@@ -9,9 +9,12 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
         Extract Google data and save it to the User model.
         """
         user = sociallogin.user
-        user.user_name = data.get("name", "")  # Use Google Name as Username
+        #user.user_name = data.get("name", "")  # Use Google Name as Username
         user.email = data.get("email", "")
         user.profile_picture = data.get("picture", "")  # Google Profile Picture
+        user.first_name = data.get("given_name", "")
+        user.last_name = data.get("family_name", "")
+        #user.save()
         return user
 
     def save_user(self, request, sociallogin, form=None):

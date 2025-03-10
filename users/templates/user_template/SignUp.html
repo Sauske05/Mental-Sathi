@@ -17,9 +17,12 @@
 
             <div class="text">
                 <img src="https://i.postimg.cc/1zgS8WTF/user.png" alt="icon" height="20">
-                <input type="text" placeholder="Name" name = 'name'>
+                <input type="text" placeholder="First name" name = 'first_name'>
             </div>
-
+            <div>
+                <img src="https://i.postimg.cc/1zgS8WTF/user.png" alt="icon" height="20">
+                <input type="text" placeholder="Last name" name = 'last_name'>
+            </div>
             <div class="text">
                 <img src="https://i.postimg.cc/DZBPRgvC/email.png" alt="icon" height="12">
                 <input type="email" placeholder="Email" name = 'email'>
@@ -41,7 +44,7 @@
             </div>
 
             <button type="submit">CREATE ACCOUNT</button>
-                                    <a href="{% provider_login_url 'google' %}">Signup with Google</a>
+{#            <a href="{% provider_login_url 'google' %}">Signup with Google</a>#}
             {{ message }}
             <p class="conditions">Already have an account? <a href="{% url 'login' %}">Sign in</a></p>
 

@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 import httpx
 import asyncio
 from django.db.models import Q
-from .models import SentimentModel
+#from .models import SentimentModel
 import statistics
 from users.models import User
 from .bert_model.configure import *
@@ -106,8 +106,9 @@ def process_initial_data(request, feelings_text, emotion, bert_analysis):
             else:
                 average_score = score[emotion]
             with transaction.atomic():
-                user_name_session = request.session['user_id']
-                user_name = User.objects.get(user_name=user_name_session)
+                user_email_session = request.session['user_id']
+                print(f'This is the user_name -->>>{user_email_session}')
+                user_name = CustomUser.objects.get(email=user_email_session)
                 sentiment_obj = SentimentDB(
                     user_name=user_name,
                     sentiment_data=emotion,
@@ -178,8 +179,10 @@ async def sentiment_process(request):
 
 
 def generate_sentiment_report_pdf(request, user_id):
-    user = request.user
-    sentiment_data = get_user_sentiment_data_report(user_id)
+    user_email = request.session.get('user_id')
+    user = CustomUser.objects.get(email=user_email)
+    print(f'The real user king {user_email}')
+    sentiment_data = get_user_sentiment_data_report(user_email)
 
     # Create a file-like buffer to receive PDF data
     buffer = BytesIO()
@@ -222,8 +225,8 @@ def generate_sentiment_report_pdf(request, user_id):
     user_data = [
         ["Full Name:", f"{user.first_name} {user.last_name}"],
         ["Email:", user.email],
-        ["Last Login:", user.last_login.strftime("%Y-%m-%d %H:%M:%S") if user.last_login else "Never"],
-        ["Account Created:", user.date_joined.strftime("%Y-%m-%d %H:%M:%S")]
+        #["Last Login:", user.last_login.strftime("%Y-%m-%d %H:%M:%S") if user.last_login else "Never"],
+        #["Account Created:", user.date_joined.strftime("%Y-%m-%d %H:%M:%S")]
     ]
 
     user_table = Table(user_data, colWidths=[1.5 * inch, 4 * inch])
@@ -398,8 +401,10 @@ def generate_sentiment_report_pdf(request, user_id):
 
 
 
-def get_user_sentiment_data_report(user_id):
-    sentiment_obj = SentimentModel.objects.filter(user_name=user_id)
+def get_user_sentiment_data_report(user_email):
+    print('User Id to be debugged:', user_email)
+    user = CustomUser.objects.get(email=user_email)
+    sentiment_obj = SentimentDB.objects.filter(user_name=user)
     sentiment_scores = list(sentiment_obj.values_list('sentiment_score', flat=True))
     sentiment_scores = [score for score in sentiment_scores if isinstance(score, float)]
     overall_score = statistics.mean(sentiment_scores) if sentiment_scores else 0
