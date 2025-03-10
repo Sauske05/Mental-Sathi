@@ -5,3 +5,5 @@ class SentimentSerializer(serializers.ModelSerializer):
     class Meta:
         model = SentimentModel
         fields = '__all__'
+
+

@@ -11,6 +11,9 @@ import asyncio
 from django.db.models import Q
 #from .models import SentimentModel
 import statistics
+
+from reportlab.lib.enums import TA_RIGHT, TA_CENTER
+
 from users.models import User
 from .bert_model.configure import *
 from .bert_model.tokenizer import *
@@ -24,11 +27,11 @@ from .serializers import SentimentSerializer
 
 from django.http import HttpResponse
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter, landscape
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
-from reportlab.graphics.shapes import Drawing
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, HRFlowable
+from reportlab.graphics.shapes import Drawing, String
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.piecharts import Pie
 from reportlab.graphics.charts.linecharts import HorizontalLineChart
@@ -188,202 +191,385 @@ def generate_sentiment_report_pdf(request, user_id):
     buffer = BytesIO()
 
     # Create the PDF object using the buffer as its "file"
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    # Switch to landscape for a more modern layout
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(letter),
+        leftMargin=0.5 * inch,
+        rightMargin=0.5 * inch,
+        topMargin=0.5 * inch,
+        bottomMargin=0.5 * inch
+    )
 
     # Container for the 'Flowable' objects
     elements = []
 
-    # Styles
+    # Enhanced styling
     styles = getSampleStyleSheet()
-    title_style = styles['Heading1']
-    subtitle_style = styles['Heading2']
-    normal_style = styles['Normal']
 
-    # Custom styles
-    header_style = ParagraphStyle(
-        'HeaderStyle',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.gray
+    # Modern title style
+    title_style = ParagraphStyle(
+        'ModernTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#1a73e8'),  # Google blue
+        spaceAfter=16,
+        fontName='Helvetica-Bold'
     )
 
-    # Add company logo/header
-    # elements.append(Image('path/to/logo.png', width=2*inch, height=0.5*inch))
+    # Modern subtitle style
+    subtitle_style = ParagraphStyle(
+        'ModernSubtitle',
+        parent=styles['Heading2'],
+        fontSize=16,
+        textColor=colors.HexColor('#202124'),  # Dark gray
+        spaceBefore=12,
+        spaceAfter=8,
+        fontName='Helvetica-Bold',
+        borderPadding=10,
+        borderWidth=0,
+        borderColor=colors.HexColor('#e0e0e0'),
+        borderRadius=5
+    )
 
-    # Add report title
-    elements.append(Paragraph("Sentiment Analysis Report", title_style))
+    # Normal text style
+    normal_style = ParagraphStyle(
+        'ModernNormal',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#5f6368'),  # Medium gray
+        fontName='Helvetica'
+    )
 
-    # Add timestamp
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    elements.append(Paragraph(f"Generated on: {current_time}", header_style))
-    elements.append(Spacer(1, 0.2 * inch))
+    # Header style
+    header_style = ParagraphStyle(
+        'ModernHeader',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#9aa0a6'),  # Light gray
+        fontName='Helvetica'
+    )
 
-    # User Information Section
+    # Add header with background color
+    header_table = Table([['']], colWidths=[doc.width])
+    header_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, 0), colors.HexColor('#f8f9fa')),  # Light gray
+        ('BOTTOMPADDING', (0, 0), (0, 0), 0.3 * inch),
+        ('TOPPADDING', (0, 0), (0, 0), 0.3 * inch),
+    ]))
+    elements.append(header_table)
+
+    # Create a two-column layout for the title section
+    current_time = datetime.now().strftime("%B %d, %Y")
+    title_data = [
+        [Paragraph("<b>SENTIMENT ANALYSIS</b><br/><font size=14 color='#5f6368'>Comprehensive Report</font>",
+                   title_style),
+         Paragraph(
+             f"<font size=9><b>GENERATED</b>: {current_time}</font><br/><font size=8 color='#9aa0a6'>CONFIDENTIAL</font>",
+             ParagraphStyle(
+                 'DateStyle',
+                 parent=normal_style,
+                 alignment=TA_RIGHT
+             ))]
+    ]
+
+    title_table = Table(title_data, colWidths=[4.5 * inch, 4.5 * inch])
+    title_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0.2 * inch),
+    ]))
+    elements.append(title_table)
+
+    # Separator line
+    elements.append(HRFlowable(
+        width="100%",
+        thickness=1,
+        color=colors.HexColor('#e0e0e0'),
+        spaceAfter=0.3 * inch
+    ))
+
+    # Create a card-like effect for user information
     elements.append(Paragraph("User Information", subtitle_style))
 
-    # User details table
+    # User details in a modern card-like table
     user_data = [
         ["Full Name:", f"{user.first_name} {user.last_name}"],
         ["Email:", user.email],
-        #["Last Login:", user.last_login.strftime("%Y-%m-%d %H:%M:%S") if user.last_login else "Never"],
-        #["Account Created:", user.date_joined.strftime("%Y-%m-%d %H:%M:%S")]
     ]
 
-    user_table = Table(user_data, colWidths=[1.5 * inch, 4 * inch])
+    user_table = Table(user_data, colWidths=[1.5 * inch, 7.5 * inch])
     user_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
-        ('TEXTCOLOR', (0, 0), (0, -1), colors.black),
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8f9fa')),  # Light gray
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#5f6368')),  # Medium gray
         ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
         ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('GRID', (0, 0), (-1, -1), 0.25, colors.grey),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ('TOPPADDING', (0, 0), (-1, -1), 12),
+        ('LEFTPADDING', (0, 0), (-1, -1), 15),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 15),
+        ('GRID', (0, 0), (-1, -1), 0, colors.white),  # No grid lines
+        ('ROUNDEDCORNERS', [10, 10, 10, 10]),
     ]))
 
     elements.append(user_table)
     elements.append(Spacer(1, 0.3 * inch))
 
-    # Summary Section
+    # Summary Section with modern card-like design
     elements.append(Paragraph("Sentiment Analysis Summary", subtitle_style))
 
-    # Example sentiment summary
-    sentiment_summary = f"""
-    This report provides an analysis of sentiment data collected from your account interactions.
-    Overall Sentiment Score: {sentiment_data['overall_score']:.2f}/10
-    Total Items Analyzed: {sentiment_data['total_items']}
-    Period: {sentiment_data['start_date']} to {sentiment_data['end_date']}
-    """
-    elements.append(Paragraph(sentiment_summary, normal_style))
+    # Create a fancy score indicator
+    score = sentiment_data['overall_score']
+    score_color = colors.HexColor('#34a853') if score >= 7 else colors.HexColor(
+        '#fbbc05') if score >= 4 else colors.HexColor('#ea4335')
+
+    summary_data = [
+        [
+            Paragraph(
+                f"<font size=32 color='{score_color.hexval()}'><b>{score:.1f}</b></font><br/><font size=9>OUT OF 10</font>",
+                ParagraphStyle('ScoreStyle', alignment=TA_CENTER)),
+            Paragraph(f"""
+                <b>Analysis Period:</b> {sentiment_data['start_date']} - {sentiment_data['end_date']}<br/>
+                <b>Total Items Analyzed:</b> {sentiment_data['total_items']}<br/><br/>
+                This report provides an in-depth analysis of sentiment data collected from your 
+                account interactions, evaluating the emotional tone across various channels and topics.
+            """, normal_style)
+        ]
+    ]
+
+    summary_table = Table(summary_data, colWidths=[2 * inch, 7 * inch])
+    summary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8f9fa')),  # Light gray background
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 15),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 15),
+        ('TOPPADDING', (0, 0), (-1, -1), 15),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 15),
+        ('GRID', (0, 0), (-1, -1), 0, colors.white),  # No grid lines
+        ('ROUNDEDCORNERS', [10, 10, 10, 10]),
+    ]))
+
+    elements.append(summary_table)
     elements.append(Spacer(1, 0.3 * inch))
 
-    # Add pie chart for sentiment distribution
-    elements.append(Paragraph("Sentiment Distribution", subtitle_style))
+    # Create a two-column layout for charts
+    elements.append(Paragraph("Sentiment Insights", subtitle_style))
 
-    # Create the pie chart
-    drawing = Drawing(400, 200)
+    # Create the modern pie chart for sentiment distribution
+    drawing_pie = Drawing(300, 200)
     pie = Pie()
-    pie.x = 150
+    pie.x = 100
     pie.y = 50
     pie.width = 100
     pie.height = 100
     pie.data = [sentiment_data['positive_percentage'],
                 sentiment_data['neutral_percentage'],
                 sentiment_data['negative_percentage']]
-    pie.labels = ['Positive', 'Neutral', 'Negative']
-    pie.slices.strokeWidth = 0.5
-    pie.slices[0].fillColor = colors.green
-    pie.slices[1].fillColor = colors.yellow
-    pie.slices[2].fillColor = colors.red
+    pie.labels = None  # No labels on the pie itself
 
-    # Add a legend
+    # Modern color scheme
+    pie.slices.strokeWidth = 0
+    pie.slices[0].fillColor = colors.HexColor('#34a853')  # Green
+    pie.slices[1].fillColor = colors.HexColor('#fbbc05')  # Yellow
+    pie.slices[2].fillColor = colors.HexColor('#ea4335')  # Red
+
+    # Add a modern legend
     legend = Legend()
     legend.alignment = 'right'
-    legend.x = 280
-    legend.y = 90
-    legend.colorNamePairs = [(colors.green, 'Positive'),
-                             (colors.yellow, 'Neutral'),
-                             (colors.red, 'Negative')]
+    legend.x = 220
+    legend.y = 75
+    legend.columnMaximum = 1
+    legend.fontName = 'Helvetica'
+    legend.fontSize = 10
+    legend.colorNamePairs = [(colors.HexColor('#34a853'), 'Positive'),
+                             (colors.HexColor('#fbbc05'), 'Neutral'),
+                             (colors.HexColor('#ea4335'), 'Negative')]
 
-    drawing.add(pie)
-    drawing.add(legend)
-    elements.append(drawing)
-    elements.append(Spacer(1, 0.2 * inch))
+    # Add title to the chart
+    title = String(100, 170, 'Sentiment Distribution', fontSize=12, fontName='Helvetica-Bold',
+                   fillColor=colors.HexColor('#202124'))
 
-    # Add time series chart for sentiment trends
-    elements.append(Paragraph("Sentiment Trends Over Time", subtitle_style))
+    drawing_pie.add(title)
+    drawing_pie.add(pie)
+    drawing_pie.add(legend)
 
-    # Create the line chart
-    drawing = Drawing(400, 200)
+    # Create the modern line chart for sentiment trends
+    drawing_line = Drawing(300, 200)
 
     lc = HorizontalLineChart()
-    lc.x = 50
-    lc.y = 50
-    lc.height = 125
-    lc.width = 300
+    lc.x = 30
+    lc.y = 40
+    lc.height = 110
+    lc.width = 250
     lc.data = [sentiment_data['trend_data']]
-    lc.lines[0].strokeColor = colors.blue
-    #lc.lines[0].symbol = makeMarker('Circle')
+    lc.lines[0].strokeColor = colors.HexColor('#1a73e8')  # Google blue
+    lc.lines[0].strokeWidth = 2
+    lc.lines.symbol = makeMarker('FilledCircle', )
 
-    # Configure x axis
+    # Configure axes
     lc.categoryAxis.categoryNames = sentiment_data['trend_dates']
     lc.categoryAxis.labels.boxAnchor = 'ne'
     lc.categoryAxis.labels.angle = 30
     lc.categoryAxis.labels.dy = -10
+    lc.categoryAxis.labels.fontName = 'Helvetica'
+    lc.categoryAxis.labels.fontSize = 8
 
-    # Configure y axis
     lc.valueAxis.valueMin = -1
     lc.valueAxis.valueMax = 1
     lc.valueAxis.valueStep = 0.2
+    lc.valueAxis.labels.fontName = 'Helvetica'
+    lc.valueAxis.labels.fontSize = 8
 
-    drawing.add(lc)
-    elements.append(drawing)
-    elements.append(Spacer(1, 0.2 * inch))
+    # Background
+    lc.fillColor = colors.HexColor('#f8f9fa')
 
-    # Add topic sentiment breakdown
-    elements.append(Paragraph("Sentiment by Topic", subtitle_style))
+    # Add title to the chart
+    title_line = String(140, 170, 'Sentiment Trends', fontSize=12, fontName='Helvetica-Bold',
+                        fillColor=colors.HexColor('#202124'))
 
-    # Create the bar chart
-    drawing = Drawing(400, 200)
+    drawing_line.add(title_line)
+    drawing_line.add(lc)
+
+    # Create a two-column layout for the charts
+    chart_data = [[drawing_pie, drawing_line]]
+
+    chart_table = Table(chart_data, colWidths=[4.5 * inch, 4.5 * inch])
+    chart_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+    ]))
+
+    elements.append(chart_table)
+
+    # Bar chart for topic sentiment
+    elements.append(Paragraph("Topic Analysis", subtitle_style))
+
+    drawing_bar = Drawing(600, 250)
 
     bc = VerticalBarChart()
     bc.x = 50
     bc.y = 50
-    bc.height = 125
-    bc.width = 300
+    bc.height = 150
+    bc.width = 500
     bc.data = [sentiment_data['topic_scores']]
-    bc.bars[0].fillColor = colors.steelblue
+
+    # Modern gradient colors for bars
+    for i in range(len(sentiment_data['topics'])):
+        bc.bars[0].fillColor = colors.HexColor('#1a73e8')  # Google blue
 
     # Configure x axis
     bc.categoryAxis.categoryNames = sentiment_data['topics']
     bc.categoryAxis.labels.boxAnchor = 'ne'
     bc.categoryAxis.labels.angle = 30
     bc.categoryAxis.labels.dy = -10
+    bc.categoryAxis.labels.fontName = 'Helvetica'
+    bc.categoryAxis.labels.fontSize = 8
 
     # Configure y axis
     bc.valueAxis.valueMin = 0
     bc.valueAxis.valueMax = 10
     bc.valueAxis.valueStep = 1
+    bc.valueAxis.labels.fontName = 'Helvetica'
+    bc.valueAxis.labels.fontSize = 8
 
-    drawing.add(bc)
-    elements.append(drawing)
+    # Add title to the chart
+    title_bar = String(275, 220, 'Sentiment by Topic', fontSize=12, fontName='Helvetica-Bold',
+                       fillColor=colors.HexColor('#202124'))
+
+    drawing_bar.add(title_bar)
+    drawing_bar.add(bc)
+    elements.append(drawing_bar)
     elements.append(Spacer(1, 0.3 * inch))
 
-    # Detailed findings section
+    # Detailed findings section with modern table
     elements.append(Paragraph("Detailed Findings", subtitle_style))
 
-    # Create table for detailed sentiment items
-    detailed_data = [["Date", "Source", "Text", "Sentiment"]]
+    # Create table header with modern styling
+    table_header = [["DATE", "SOURCE", "TEXT", "SENTIMENT"]]
 
-    # Add sample sentiment items
-    for item in sentiment_data['detailed_items']:
-        sentiment_text = item['sentiment']
-        color = colors.green if item['sentiment'] == 'Positive' else colors.red if item[
-                                                                                       'sentiment'] == 'Negative' else colors.orange
-        detailed_data.append([
-            item['date'],
-            item['source'],
-            Paragraph(item['text'][:100] + "..." if len(item['text']) > 100 else item['text'], normal_style),
-            sentiment_text
-        ])
-
-    detailed_table = Table(detailed_data, colWidths=[1 * inch, 1 * inch, 3.5 * inch, 1 * inch])
-    detailed_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+    header_table = Table(table_header, colWidths=[1 * inch, 1 * inch, 6 * inch, 1 * inch])
+    header_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a73e8')),  # Google blue
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
-        ('GRID', (0, 0), (-1, -1), 0.25, colors.grey),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('TOPPADDING', (0, 0), (-1, 0), 8),
     ]))
 
-    elements.append(detailed_table)
+    elements.append(header_table)
 
-    # Add footer
+    # Add sentiment items with alternating row colors
+    for i, item in enumerate(sentiment_data['detailed_items']):
+        sentiment_text = item['sentiment']
+
+        # Determine row color
+        row_color = colors.HexColor('#f8f9fa') if i % 2 == 0 else colors.white
+
+        # Determine sentiment color badge
+        if item['sentiment'] == 'Positive':
+            sentiment_color = colors.HexColor('#34a853')  # Green
+        elif item['sentiment'] == 'Negative':
+            sentiment_color = colors.HexColor('#ea4335')  # Red
+        else:
+            sentiment_color = colors.HexColor('#fbbc05')  # Yellow
+
+        # Create row data
+        row_data = [
+            [item['date'],
+             item['source'],
+             Paragraph(item['text'][:100] + "..." if len(item['text']) > 100 else item['text'], normal_style),
+             sentiment_text]
+        ]
+
+        row_table = Table(row_data, colWidths=[1 * inch, 1 * inch, 6 * inch, 1 * inch])
+        row_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), row_color),
+            ('BACKGROUND', (3, 0), (3, 0), sentiment_color),
+            ('TEXTCOLOR', (3, 0), (3, 0), colors.white),
+            ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+            ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+            ('ALIGN', (3, 0), (3, 0), 'CENTER'),
+            ('FONTNAME', (0, 0), (1, 0), 'Helvetica'),
+            ('FONTNAME', (3, 0), (3, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 9),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('TOPPADDING', (0, 0), (-1, 0), 12),
+            ('LEFTPADDING', (0, 0), (-1, 0), 10),
+            ('RIGHTPADDING', (0, 0), (-1, 0), 10),
+        ]))
+
+        elements.append(row_table)
+
+    # Modern footer
     elements.append(Spacer(1, 0.5 * inch))
-    elements.append(Paragraph(
-        "This report is confidential and generated automatically. For questions or support, please contact islingtoncollege.edu.np",
-        header_style))
+
+    footer_data = [[
+        # Paragraph(
+        #     "<img src='path/to/logo.png' width='100' height='20' />",
+        #     normal_style
+        # ),
+        Paragraph(
+            "This report is confidential and generated automatically. For questions or support, please contact <font color='#1a73e8'>islingtoncollege.edu.np</font>",
+            ParagraphStyle(
+                'FooterStyle',
+                parent=header_style,
+                alignment=TA_RIGHT
+            )
+        )
+    ]]
+
+    footer_table = Table(footer_data, colWidths=[4 * inch, 5 * inch])
+    footer_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+    ]))
+
+    elements.append(footer_table)
 
     # Build the PDF
     doc.build(elements)
@@ -398,7 +584,6 @@ def generate_sentiment_report_pdf(request, user_id):
     response.write(pdf)
 
     return response
-
 
 
 def get_user_sentiment_data_report(user_email):
@@ -488,3 +673,12 @@ def makeMarker(name):
     from reportlab.graphics.shapes import Circle
     if name == 'Circle':
         return Circle(3, cy=3, r = 2, fillColor=colors.blue)
+
+@csrf_exempt
+def fetch_sentimentScore(request):
+    if request.method == 'POST':
+        duration = request.POST.get('duration')
+        user_email = request.session.get('user_id')
+        user = CustomUser.objects.get(email=user_email)
+        data_sentiment_score = list(SentimentDB.objects.filter(user_name = user).values_list('sentiment_score', 'date_time'))
+        return JsonResponse(data_sentiment_score, safe=False)
