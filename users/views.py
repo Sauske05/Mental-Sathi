@@ -1,3 +1,4 @@
+from django.db.models import Avg, Max
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from rest_framework.views import APIView
@@ -17,6 +18,7 @@ from django.contrib.auth import get_user_model
 import pytz
 from django.db import transaction
 from users.serializers import CustomUserSerializer
+from sentiment_analysis.models import SentimentModel
 NEPAL_TZ = pytz.timezone('Asia/Kathmandu')
 def login_view(request):
     if request.method == "POST":
@@ -234,7 +236,9 @@ def admin_charts(request):
     return render(request, 'admin/charts.html')
 
 def admin_tables(request):
-    return render(request, 'admin/tables.html')
+    #user_records = CustomUser.objects.all()
+    user_records = CustomUser.objects.annotate(avg_sentiment=Avg('sentimentmodel__sentiment_score')).annotate(last_logged_in=Max('dashboardrecords__last_login_date'))
+    return render(request, 'admin/tables.html', {'all_user_info_table' : user_records})
 
 def user_dashboard(request):
     user_email = request.session.get('user_id')
