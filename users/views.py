@@ -19,13 +19,16 @@ import pytz
 from django.db import transaction
 from users.serializers import CustomUserSerializer
 from sentiment_analysis.models import SentimentModel
+
 NEPAL_TZ = pytz.timezone('Asia/Kathmandu')
+
+
 def login_view(request):
     if request.method == "POST":
         form = LoginForm(request.POST)
         if form.is_valid():
-            #email = form.cleaned_data['email']
-            #password = form.cleaned_data['password']
+            # email = form.cleaned_data['email']
+            # password = form.cleaned_data['password']
             email = request.POST.get('email')
             password = request.POST.get('password')
 
@@ -38,31 +41,30 @@ def login_view(request):
                 if check_password(password, user.password):
                     # Start session
                     request.session['user_id'] = user.email
-                    #Updating the dashboard
+                    # Updating the dashboard
                     current_time = datetime.now(NEPAL_TZ)
 
                     current_date = current_time.date()
                     last_login_date = dashboard_detail.last_login_date
-                    #print(f'Current Date: {current_date}')
-                    #print(f'Last Login Date: {last_login_date}')
+                    # print(f'Current Date: {current_date}')
+                    # print(f'Last Login Date: {last_login_date}')
                     if not last_login_date:
                         dashboard_detail.login_streak = 1
-                        dashboard_detail.number_of_login_days =1
+                        dashboard_detail.number_of_login_days = 1
                     if last_login_date:
                         last_login_date = last_login_date.date()
                         if last_login_date == current_date:
                             pass
                         elif last_login_date == current_date - timedelta(days=1):
-                            dashboard_detail.login_streak +=1
-                            dashboard_detail.number_of_login_days +=1
+                            dashboard_detail.login_streak += 1
+                            dashboard_detail.number_of_login_days += 1
                         else:
                             dashboard_detail.login_streak = 0
-                            dashboard_detail.number_of_login_days +=1
+                            dashboard_detail.number_of_login_days += 1
                     dashboard_detail.last_login_date = current_date
 
-
                     dashboard_detail.save()
-                    #messages.success(request, "Login successful!")
+                    # messages.success(request, "Login successful!")
                     return redirect(user_dashboard, )  # Redirect to your homepage URL name
                 else:
                     messages.error(request, "Invalid password.")
@@ -106,33 +108,38 @@ def login_view(request):
     #         messages.error(request, "User does not exist.")
     #     return redirect(user_dashboard, )
 
-
-    #return render(request, 'users/Login_page.html', {'form': form})
+    # return render(request, 'users/Login_page.html', {'form': form})
     return render(request, 'user_template/Login_page.html')
 
 
 def view_login(request):
-    return render(request, 'user_template/Login_page.html', context= {'name' : 'Arun', 'age' : '21'})
+    return render(request, 'user_template/Login_page.html', context={'name': 'Arun', 'age': '21'})
+
+
 # Create your views here.
 
 def get_user_data(request, user_name):
-        try:
-            #user_name = request.POST.get('user_name')
-            user_obj = CustomUser.objects.get(first_name=user_name)
-        except CustomUser.DoesNotExist:
-            return HttpResponse(status=404)
-        if request.method == "GET":
-            serializer = CustomUserSerializer(user_obj)
-            return JsonResponse(serializer.data, safe=False)
+    try:
+        # user_name = request.POST.get('user_name')
+        user_obj = CustomUser.objects.get(first_name=user_name)
+    except CustomUser.DoesNotExist:
+        return HttpResponse(status=404)
+    if request.method == "GET":
+        serializer = CustomUserSerializer(user_obj)
+        return JsonResponse(serializer.data, safe=False)
+
+
 def homepage(request):
     user_id = request.session.get('user_id')
     if user_id:
-        return render(request, 'homepage.html', {'user_id': user_id, 'session' : request.session})
+        return render(request, 'homepage.html', {'user_id': user_id, 'session': request.session})
     return redirect('login')
 
 
 def admin_dashboard(request):
-    return render(request, 'admin/index_.html')
+    user_records = CustomUser.objects.annotate(avg_sentiment=Avg('sentimentmodel__sentiment_score')).annotate(
+        last_logged_in=Max('dashboardrecords__last_login_date'))
+    return render(request, 'admin/index_.html', {'all_user_info_table': user_records})
 
 
 def signup_authentication(func):
@@ -174,13 +181,16 @@ def signup_authentication(func):
                 return render(request, 'user_template/SignUp.html', {'message': message})
 
             request.clean_data = {
-                'first_name' : first_name,
-                'last_name' : last_name,
-                'email' : email,
-                'password' : password
+                'first_name': first_name,
+                'last_name': last_name,
+                'email': email,
+                'password': password
             }
         return func(request, **kwargs)
+
     return wrapper
+
+
 @signup_authentication
 def signup(request):
     if request.method == 'POST':
@@ -189,25 +199,27 @@ def signup(request):
             # print(f'This is the user_data {user_data.get("name")}')
             # #print(f'user_data {user_data.keys()}')
             with transaction.atomic():
-                user = CustomUser(first_name=user_data.get("first_name"), last_name=user_data.get("last_name"), password=user_data.get("password"), email=user_data.get("email"))
+                user = CustomUser(first_name=user_data.get("first_name"), last_name=user_data.get("last_name"),
+                                  password=user_data.get("password"), email=user_data.get("email"))
                 user.save()
-                #User = get_user_model()
+                # User = get_user_model()
                 user_filter = CustomUser.objects.get(email=user_data.get("email"))
                 print(user_filter)
-                dashboard_init = DashboardRecords(user_name=user_filter, login_streak=0, number_of_login_days=0, positive_streak=0)
+                dashboard_init = DashboardRecords(user_name=user_filter, login_streak=0, number_of_login_days=0,
+                                                  positive_streak=0)
                 dashboard_init.save()
             messages.success(request, "Account created successfully! Please log in.")
             return render(request, 'user_template/Login_page.html')
         except Exception as e:
             message = f"An error occurred: {str(e)}"
-            return render(request, 'user_template/SignUp.html', {'message' : message})
+            return render(request, 'user_template/SignUp.html', {'message': message})
 
-    return render(request, 'user_template/SignUp.html', {'message' : ''})
-
+    return render(request, 'user_template/SignUp.html', {'message': ''})
 
 
 def buttons(request):
     return render(request, 'admin/buttons.html')
+
 
 def card(request):
     return render(request, 'admin/cards.html')
@@ -216,11 +228,14 @@ def card(request):
 def utilities_border(request):
     return render(request, 'admin/utilities-border.html')
 
+
 def utilities_animation(request):
     return render(request, 'admin/utilities-animation.html')
 
+
 def utilities_color(request):
     return render(request, 'admin/utilities-color.html')
+
 
 def utilities_other(request):
     return render(request, 'admin/utilities-other.html')
@@ -229,16 +244,21 @@ def utilities_other(request):
 def error_page(request):
     return render(request, 'admin/404.html')
 
+
 def blank_page(request):
     return render(request, 'admin/blank.html')
+
 
 def admin_charts(request):
     return render(request, 'admin/charts.html')
 
+
 def admin_tables(request):
-    #user_records = CustomUser.objects.all()
-    user_records = CustomUser.objects.annotate(avg_sentiment=Avg('sentimentmodel__sentiment_score')).annotate(last_logged_in=Max('dashboardrecords__last_login_date'))
-    return render(request, 'admin/tables.html', {'all_user_info_table' : user_records})
+    # user_records = CustomUser.objects.all()
+    user_records = CustomUser.objects.annotate(avg_sentiment=Avg('sentimentmodel__sentiment_score')).annotate(
+        last_logged_in=Max('dashboardrecords__last_login_date'))
+    return render(request, 'admin/tables.html', {'all_user_info_table': user_records})
+
 
 def user_dashboard(request):
     user_email = request.session.get('user_id')
@@ -246,19 +266,23 @@ def user_dashboard(request):
     print(user)
     print('Here')
     user_details = DashboardRecords.objects.get(user_name=user)
-    return render(request, 'user_template/index.html', {'user_details' : user_details})
+    return render(request, 'user_template/index.html', {'user_details': user_details})
+
 
 def user_profile(request):
     return render(request, 'user_template/profile.html')
 
+
 def user_charts(request):
     return render(request, 'user_template/charts.html')
+
 
 def user_error(request):
     return render(request, 'user_template/404.html')
 
 
 from django.contrib.auth import logout
+
 
 def logout_view(request):
     logout(request)
