@@ -68,6 +68,7 @@
                                             <th>Email</th>
                                             <th>Sentiment Score</th>
                                             <th>Last Logged In</th>
+                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -79,6 +80,7 @@
                                             <td>{{ records.email }}</td>
                                             <td>{{ records.avg_sentiment|floatformat:2 }}</td>
                                             <td>{{ records.last_logged_in }}</td>
+                                            <td><button class="btn btn-info btn-sm details-btn">Details</button></td>
                                         </tr>
                                     {% endfor %}
 
@@ -93,7 +95,25 @@
 
             </div>
             <!-- End of Main Content -->
-
+            <!-- User Details Modal -->
+<div class="modal fade" id="userDetailsModal" tabindex="-1" role="dialog" aria-labelledby="userDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="userDetailsModalLabel">User Details</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Content will be dynamically inserted here -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
             <!-- Footer -->
             <footer class="sticky-footer bg-white">
                 <div class="container my-auto">
@@ -150,7 +170,51 @@
     <script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
 
     <!-- Page level custom scripts -->
-    <script src="{% static 'js/demo/datatables-demo.js' %}"></script>
+    <script src="{% static 'js/admin-js/datatables-demo.js' %}"></script>
+    <script>
+    // Add this script to handle the Details button clicks
+    $(document).ready(function() {
+        // Initialize DataTable (the initialization should already be in datatables-demo.js)
+
+        // Handle click event for the Details button
+        $('#dataTable tbody').on('click', 'button.details-btn', function() {
+            var tr = $(this).closest('tr');
+            var row = $('#dataTable').DataTable().row(tr);
+            var rowData = {
+                first_name: tr.find('td:eq(0)').text(),
+                last_name: tr.find('td:eq(1)').text(),
+                date_joined: tr.find('td:eq(2)').text(),
+                email: tr.find('td:eq(3)').text(),
+                sentiment_score: tr.find('td:eq(4)').text(),
+                last_logged_in: tr.find('td:eq(5)').text()
+            };
+
+            showUserDetails(rowData);
+        });
+    });
+
+    function showUserDetails(userData) {
+        // For now, using static content with dynamic user data
+        var detailsHTML = `
+            <div>
+                <h4>${userData.first_name || ''} ${userData.last_name || ''}</h4>
+                <p><strong>Email:</strong> ${userData.email}</p>
+                <p><strong>Joined:</strong> ${userData.date_joined}</p>
+                <p><strong>Last Login:</strong> ${userData.last_logged_in || 'Never'}</p>
+                <p><strong>Sentiment Score:</strong> ${userData.sentiment_score || 'N/A'}</p>
+                <p><strong>Account Status:</strong> Active</p>
+                <p><strong>User Type:</strong> Standard</p>
+                <p><strong>Profile Completion:</strong> 75%</p>
+                <p><strong>Activity Level:</strong> Medium</p>
+                <p><strong>Notes:</strong> Regular user with average engagement.</p>
+            </div>
+        `;
+
+        // Show the modal with the details
+        $('#userDetailsModal .modal-body').html(detailsHTML);
+        $('#userDetailsModal').modal('show');
+    }
+    </script>
 
 </body>
 

@@ -30,11 +30,11 @@ function number_format(number, decimals, dec_point, thousands_sep) {
 async function getSentimentScore(duration) {
 
     try {
-        const user_email_fetch = await fetch('/get_session/', {
-            method: 'GET'
-        })
-
-        user_email = user_email_fetch.json()
+        // const user_email_fetch = await fetch('/get_session/', {
+        //     method: 'GET'
+        // })
+        //
+        // user_email = user_email_fetch.json()
 
         const url = 'http://127.0.0.1:8000/sentiment/fetch_sentimentScore';
 
@@ -44,7 +44,8 @@ async function getSentimentScore(duration) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(
-                {'duration': duration}
+                {'duration': duration,
+                'type' : 'all_users'}
             )
         })
 

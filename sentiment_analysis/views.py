@@ -64,6 +64,28 @@ def get_user_sentiment_data(request, user_email):
         except SentimentDB.DoesNotExist:
             return HttpResponse(status=404)
 
+@csrf_exempt
+def fetch_bar_sentiment_data(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        duration = data.get("duration")
+        try:
+            if duration == 'weekly':
+                sentiment_obj = SentimentDB.objects.filter(
+                    Q(date_time__gte=datetime.today().date() - timedelta(7)))
+            if duration == 'monthly':
+                sentiment_obj = SentimentDB.objects.filter(
+                    Q(date_time__gte=datetime.today().date() - timedelta(30)))
+            if duration == 'all_time':
+                sentiment_obj = SentimentDB.objects.all()
+            serializer = SentimentSerializer(sentiment_obj, many=True)
+            print(f'This is the serialized data: {JsonResponse(serializer.data, safe=False)}')
+            return JsonResponse(serializer.data, safe=False)
+        except SentimentDB.DoesNotExist:
+            return HttpResponse(status=404)
+        except Exception as e:
+            return e
+
 
 
 
@@ -684,8 +706,15 @@ def makeMarker(name):
 
 @csrf_exempt
 def fetch_sentimentScore(request):
+
     if request.method == 'POST':
         duration = request.POST.get('duration')
+        if request.POST.get('type') == 'all_users':
+            data_sentiment_score = list(SentimentDB.objects.filter(
+                Q(date_time__gte=datetime.today().date() - timedelta(7))).values_list(
+                'sentiment_score', 'date_time'))
+            return JsonResponse(data_sentiment_score, safe=False)
+
         user_email = request.session.get('user_id')
         user = CustomUser.objects.get(email=user_email)
         #data_sentiment_score = list(SentimentDB.objects.filter(user_name = user).values_list('sentiment_score', 'date_time'))
