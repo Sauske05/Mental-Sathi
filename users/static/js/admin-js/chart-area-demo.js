@@ -44,8 +44,10 @@ async function getSentimentScore(duration) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(
-                {'duration': duration,
-                'type' : 'all_users'}
+                {
+                    'duration': duration,
+                    'type': 'all_users'
+                }
             )
         })
 
@@ -64,8 +66,8 @@ async function getSentimentScore(duration) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', async function () {
-    const sentiment_data = await getSentimentScore('weekly');
+async function initializeAreaChart(duration) {
+    const sentiment_data = await getSentimentScore(duration);
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 // Initialize sentiment scores for all days to 0
@@ -111,6 +113,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Area Chart Example
     var ctx = document.getElementById("myAreaChart");
+
+    console.log('Area Chart buttons trigerred!')
     var myLineChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -200,5 +204,14 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     });
 
+}
+
+document.addEventListener('DOMContentLoaded', async function () {
+    await initializeAreaChart('weekly')
+
+    document.getElementById('all_time_area_chart_button').addEventListener('click', async () => await initializeAreaChart('all_time'))
+
+    document.getElementById('monthly_area_chart_button').addEventListener('click', async () => await initializeAreaChart('monthly'))
+    document.getElementById('weekly_area_chart_button').addEventListener('click', async () => await initializeAreaChart('weekly'))
 })
 

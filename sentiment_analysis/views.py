@@ -752,9 +752,19 @@ def fetch_sentimentScore(request):
     if request.method == 'POST':
         duration = request.POST.get('duration')
         if request.POST.get('type') == 'all_users':
-            data_sentiment_score = list(SentimentDB.objects.filter(
-                Q(date_time__gte=datetime.today().date() - timedelta(7))).values_list(
-                'sentiment_score', 'date_time'))
+            data_sentiment_score = None
+            match duration:
+                case 'weekly':
+                    data_sentiment_score = list(SentimentDB.objects.filter(
+                        Q(date_time__gte=datetime.today().date() - timedelta(7))).values_list(
+                        'sentiment_score', 'date_time'))
+                case 'monthly':
+                    data_sentiment_score = list(SentimentDB.objects.filter(
+                        Q(date_time__gte=datetime.today().date() - timedelta(30))).values_list(
+                        'sentiment_score', 'date_time'))
+                case 'all_time':
+                    data_sentiment_score = list(SentimentDB.objects.all().values_list('sentiment_score', 'date_time'))
+
             return JsonResponse(data_sentiment_score, safe=False)
 
         user_email = request.session.get('user_id')

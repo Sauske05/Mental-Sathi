@@ -81,14 +81,14 @@ function updateLabelDict(jsonData) {
     return labels_dict;
 }
 
-async function initializePieChart() {
+async function initializePieChart(duration) {
     try {
-        const sentimentScore = await fetchSentimentData();
+        const sentimentScore = await fetchSentimentData(duration);
         console.log("Sentiment score:", sentimentScore);
         //Object.keys(labels_dict).forEach(key => labels_dict[key] = 0);
 
         let labels_dict = updateLabelDict(sentimentScore);
-
+        console.log('The pie button clicked!')
         let ctx = document.getElementById("myPieChart");
         let myPieChart = new Chart(ctx, {
             type: 'doughnut',
@@ -126,7 +126,7 @@ async function initializePieChart() {
     }
 }
 
-async function fetchSentimentData() {
+async function fetchSentimentData(duration) {
     try {
         const url = 'http://127.0.0.1:8000/sentiment/fetch_bar_sentiment_data/';
         console.log(`Fetching from URL: ${url}`);
@@ -137,7 +137,7 @@ async function fetchSentimentData() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                'duration': 'all_time'
+                'duration': duration
             })
         });
 
@@ -155,7 +155,11 @@ async function fetchSentimentData() {
 }
 
 document.addEventListener('DOMContentLoaded', async function () {
-    await initializePieChart()
+    await initializePieChart('weekly')
+
+    document.getElementById('weekly_admin_pie_button').addEventListener('click', async () => await initializePieChart('weekly'))
+    document.getElementById('monthly_admin_pie_button').addEventListener('click', async () => await initializePieChart('monthly'))
+    document.getElementById('all_time_admin_pie_button').addEventListener('click', async () => await initializePieChart('all_time'))
 })
 
 // Pie Chart Example
