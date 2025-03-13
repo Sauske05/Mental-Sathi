@@ -128,7 +128,7 @@ async function initializePieChart() {
 
 async function fetchSentimentData() {
     try {
-        const url = 'http://127.0.0.1:8000/sentiment/fetch_bar_sentiment_data';
+        const url = 'http://127.0.0.1:8000/sentiment/fetch_bar_sentiment_data/';
         console.log(`Fetching from URL: ${url}`);
 
         const response = await fetch(url, {

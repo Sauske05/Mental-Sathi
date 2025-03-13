@@ -33,9 +33,9 @@ function showUserDetails(userData) {
             <p><strong>Joined:</strong> ${userData.date_joined}</p>
             <p><strong>Last Login:</strong> ${userData.last_logged_in || 'Never'}</p>
             <p><strong>Sentiment Score:</strong> ${userData.sentiment_score || 'N/A'}</p>
-            <p><strong>Account Status:</strong> Active</p>
-            <p><strong>User Type:</strong> Standard</p>
-            <p><strong>Profile Completion:</strong> 75%</p>
+            <p><strong>Weekly Sentiment Score:</strong> ${userData.weekly_sentiment_score || 'N/A'}</p>
+            <p><strong>Montly Sentiment Score:</strong> ${userData.monthly_sentiment_score || 'N/A'}</p>
+            <p><strong>Login Streak:</strong> ${userData.login_streak || 'N/A'}</p>
         </div>
     `;
 

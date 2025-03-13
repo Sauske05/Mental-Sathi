@@ -20,6 +20,8 @@
 
     <!-- Custom styles for this template-->
     <link href="{% static 'css/sb-admin-2.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+
 
 </head>
 
@@ -29,7 +31,7 @@
 <div id="wrapper">
 
     <!-- Sidebar -->
-{#    {% include 'admin_sidebar.html' %}#}
+    {#    {% include 'admin_sidebar.html' %}#}
     <!-- End of Sidebar -->
 
     <!-- Content Wrapper -->
@@ -227,17 +229,17 @@
                     <div class="col-lg-6 mb-4">
 
                         <!-- Bar Chart -->
-                            <div class="card shadow mb-4">
-                                <div class="card-header py-3">
-                                    <h6 class="m-0 font-weight-bold text-primary">Bar Chart</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="chart-bar">
-                                        <canvas id="myBarChart"></canvas>
-                                    </div>
-                                    <hr>
-                                </div>
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Bar Chart</h6>
                             </div>
+                            <div class="card-body">
+                                <div class="chart-bar">
+                                    <canvas id="myBarChart"></canvas>
+                                </div>
+                                <hr>
+                            </div>
+                        </div>
                     </div>
 
 
@@ -287,6 +289,9 @@
         </div>
         <!-- End of Main Content -->
         <!-- DataTales Example -->
+        <!-- Page Heading -->
+        <h1 class="h3 mb-2 text-gray-800" style = 'margin-left: 20px;'>Tables</h1>
+        <p class="mb-4" style = 'margin-left: 20px;'>Below is the data of all the individual's signed in as users of the website.</p>
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">User Records</h6>
@@ -418,16 +423,33 @@
         // Initialize DataTable (the initialization should already be in datatables-demo.js)
 
         // Handle click event for the Details button
-        $('#dataTable tbody').on('click', 'button.details-btn', function () {
-            var tr = $(this).closest('tr');
-            var row = $('#dataTable').DataTable().row(tr);
+        $('#dataTable tbody').on('click', 'button.details-btn', async function () {
+            let tr = $(this).closest('tr');
+            let row = $('#dataTable').DataTable().row(tr);
+            let email = tr.find('td:eq(3)').text()
+            let url = 'http://127.0.0.1:8000/sentiment/fetch_admin_table_data/'
+
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    'email': email
+                })
+            })
+            let response_json = await response.json()
+            console.log(`The response json created just now: ${response_json}`)
             var rowData = {
                 first_name: tr.find('td:eq(0)').text(),
                 last_name: tr.find('td:eq(1)').text(),
                 date_joined: tr.find('td:eq(2)').text(),
                 email: tr.find('td:eq(3)').text(),
                 sentiment_score: tr.find('td:eq(4)').text(),
-                last_logged_in: tr.find('td:eq(5)').text()
+                last_logged_in: tr.find('td:eq(5)').text(),
+                weekly_sentiment_score: response_json.weekly_sentiment_score,
+                monthly_sentiment_score: response_json.monthly_sentiment_score,
+                login_streak: response_json.login_streak
             };
 
             showUserDetails(rowData);
@@ -443,12 +465,10 @@
                 <p><strong>Joined:</strong> ${userData.date_joined}</p>
                 <p><strong>Last Login:</strong> ${userData.last_logged_in || 'Never'}</p>
                 <p><strong>Sentiment Score:</strong> ${userData.sentiment_score || 'N/A'}</p>
-                <p><strong>Account Status:</strong> Active</p>
-                <p><strong>User Type:</strong> Standard</p>
-                <p><strong>Profile Completion:</strong> 75%</p>
-                <p><strong>Activity Level:</strong> Medium</p>
-                <p><strong>Notes:</strong> Regular user with average engagement.</p>
-            </div>
+                <p><strong>Weekly Sentiment Score:</strong> ${userData.weekly_sentiment_score ? Number(userData.weekly_sentiment_score).toFixed(2) : 'N/A'}</p>
+                <p><strong>Montly Sentiment Score:</strong> ${userData.monthly_sentiment_score ? Number(userData.monthly_sentiment_score).toFixed(2) : 'N/A'}</p>
+                <p><strong>Login Streak:</strong> ${userData.login_streak ? Number(userData.login_streak).toFixed(2) : 'N/A'}</p>
+                </div>
         `;
 
         // Show the modal with the details

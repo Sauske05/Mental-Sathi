@@ -41,7 +41,7 @@ async function getSentimentData(duration) {
         // })
         // const user_email = await user_email_response.json()
         // console.log(`This is the email -> ${user_email.userEmail}`)
-        const url = `http://127.0.0.1:8000/sentiment/fetch_bar_sentiment_data`;
+        const url = `http://127.0.0.1:8000/sentiment/fetch_bar_sentiment_data/`;
 
         console.log('Attempting to fetch URL:', url);
         console.log('Full resolved URL will be:', window.location.pathname + url);

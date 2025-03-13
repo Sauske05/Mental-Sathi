@@ -8,13 +8,13 @@ from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import httpx
 import asyncio
-from django.db.models import Q
-#from .models import SentimentModel
+from django.db.models import Q, Avg
+# from .models import SentimentModel
 import statistics
 
 from reportlab.lib.enums import TA_RIGHT, TA_CENTER
 
-from users.models import User
+from users.models import User, DashboardRecords
 from .bert_model.configure import *
 from .bert_model.tokenizer import *
 from .bert_model.model import *
@@ -40,6 +40,8 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import numpy as np
 import base64
+
+
 # Create your views here.
 @csrf_exempt
 def get_user_sentiment_data(request, user_email):
@@ -49,13 +51,14 @@ def get_user_sentiment_data(request, user_email):
         data = json.loads(request.body)
         duration = data.get("duration")
         user_obj = CustomUser.objects.get(email=user_email)
-        #today_date = datetime.today().date()
+        # today_date = datetime.today().date()
         try:
             if duration == 'weekly':
-                sentiment_obj = SentimentDB.objects.filter(Q(user_name=user_obj) & Q(date_time__gte = datetime.today().date() - timedelta(7)))
+                sentiment_obj = SentimentDB.objects.filter(
+                    Q(user_name=user_obj) & Q(date_time__gte=datetime.today().date() - timedelta(7)))
             if duration == 'monthly':
                 sentiment_obj = SentimentDB.objects.filter(
-                        Q(user_name=user_obj) & Q(date_time__gte=datetime.today().date() - timedelta(30)))
+                    Q(user_name=user_obj) & Q(date_time__gte=datetime.today().date() - timedelta(30)))
             if duration == 'all_time':
                 sentiment_obj = SentimentDB.objects.filter(user_name=user_obj)
             serializer = SentimentSerializer(sentiment_obj, many=True)
@@ -63,6 +66,7 @@ def get_user_sentiment_data(request, user_email):
             return JsonResponse(serializer.data, safe=False)
         except SentimentDB.DoesNotExist:
             return HttpResponse(status=404)
+
 
 @csrf_exempt
 def fetch_bar_sentiment_data(request):
@@ -87,6 +91,36 @@ def fetch_bar_sentiment_data(request):
             return e
 
 
+@csrf_exempt
+def fetch_admin_table_data(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        email = data.get("email")
+        try:
+            user = CustomUser.objects.get(email=email)
+            avg_weekly_sentiment = SentimentDB.objects.filter(
+                Q(date_time__gte=datetime.today().date() - timedelta(7)) & Q(user_name=user)
+            ).aggregate(Avg('sentiment_score'))
+            avg_monthly_sentiment = SentimentDB.objects.filter(
+                Q(date_time__gte=datetime.today().date() - timedelta(30)) & Q(user_name=user)
+            ).aggregate(Avg('sentiment_score'))
+            login_streak_data = DashboardRecords.objects.filter(user_name=user).first()
+            if login_streak_data:
+                login_streak = login_streak_data.login_streak
+            else:
+                login_streak = None
+            weekly_sentiment_score = avg_weekly_sentiment['sentiment_score__avg']
+            monthly_sentiment_score = avg_monthly_sentiment['sentiment_score__avg']
+
+            response_dict = {
+                'weekly_sentiment_score': weekly_sentiment_score,
+                'monthly_sentiment_score': monthly_sentiment_score,
+                'login_streak' : login_streak
+            }
+            print(response_dict)
+            return JsonResponse(response_dict, safe=False)
+        except Exception as e:
+            return e
 
 
 def sentiment_page(request):
@@ -94,40 +128,42 @@ def sentiment_page(request):
 
 
 async def bert_inference(input_text, bert_model):
-    label_dict = {0 : 'Anxiety', 1 : 'Depression', 2 : 'Normal', 3 : 'Suicidal', 4 : 'Personality disorder'}
+    label_dict = {0: 'Anxiety', 1: 'Depression', 2: 'Normal', 3: 'Suicidal', 4: 'Personality disorder'}
     tokenizer_obj = Tokenizer()
     tokenized_input = tokenizer_obj.tokenize([input_text], 100)
     input_ids = tokenized_input['input_ids'].unsqueeze(0)
     print(input_ids.size())
     input_mask_ids = tokenized_input['attention_mask'].unsqueeze(0)
     print(input_mask_ids.size())
-    input_mask = input_mask_ids.transpose(-1,-2)
-    input_attn_mask = ((input_mask @ input_mask.transpose(-1,-2)).unsqueeze(1))
+    input_mask = input_mask_ids.transpose(-1, -2)
+    input_attn_mask = ((input_mask @ input_mask.transpose(-1, -2)).unsqueeze(1))
     bert_model.eval()
     model_pred = bert_model(input_ids, input_attn_mask)
-    model_idx = torch.argmax(model_pred[0]).item() #torch.argmax(model_pred.squeeze())
+    model_idx = torch.argmax(model_pred[0]).item()  # torch.argmax(model_pred.squeeze())
     if model_idx in label_dict.keys():
-        return  label_dict[model_idx]
+        return label_dict[model_idx]
+
+
 @sync_to_async
 def process_initial_data(request, feelings_text, emotion, bert_analysis):
     try:
         score = {
-            'Suicidal' : -1.0,
+            'Suicidal': -1.0,
             'Depression': -0.9,
             'Anxiety': -0.7,
             'Personality disorder': -0.6,
-            'Anxious' : -0.4,
+            'Anxious': -0.4,
             'Sad': -0.5,
-            'Angry' : -0.4,
-            'Calm' : -0.0,
-            'Normal' : 0.3,
-            'Excited' : 0.7,
-            'Happy' : 0.9
+            'Angry': -0.4,
+            'Calm': -0.0,
+            'Normal': 0.3,
+            'Excited': 0.7,
+            'Happy': 0.9
         }
         try:
             assert emotion in score.keys()
             if bert_analysis:
-                average_score = (score[emotion] + score[bert_analysis]) /2
+                average_score = (score[emotion] + score[bert_analysis]) / 2
             else:
                 average_score = score[emotion]
             with transaction.atomic():
@@ -151,6 +187,7 @@ def process_initial_data(request, feelings_text, emotion, bert_analysis):
         print(f"Error saving initial data: {e}")
         return None
 
+
 @sync_to_async
 def update_sentiment_record(sentiment_id, bot_response_):
     if sentiment_id:
@@ -161,46 +198,49 @@ def update_sentiment_record(sentiment_id, bot_response_):
                 sentiment_obj.save()
         except Exception as e:
             print(f"Error updating sentiment record: {e}")
+
+
 @csrf_exempt
 async def sentiment_process(request):
     if request.method == "POST":
-            try:
-                data = json.loads(request.body)
-                feelings_text = data.get("feelingsText")
-                emotion = data.get("selectedEmotion")
-                bert_model = SentimentAnalysisConfig.bert_model
-                bert_analysis = await bert_inference(feelings_text, bert_model)
+        try:
+            data = json.loads(request.body)
+            feelings_text = data.get("feelingsText")
+            emotion = data.get("selectedEmotion")
+            bert_model = SentimentAnalysisConfig.bert_model
+            bert_analysis = await bert_inference(feelings_text, bert_model)
 
-                sentiment_id = await process_initial_data(request, feelings_text, emotion, bert_analysis)
+            sentiment_id = await process_initial_data(request, feelings_text, emotion, bert_analysis)
 
-                prompt_data = {
-                    "prompt": f"###System: You are an intelligent and empathetic chatbot capable of providing personalized suggestions to improve the well-being of the user. Your goal is to offer three practical and mood-boosting activities based on the user's current emotional state. Respond with three activities that can help improve someone's mood today. ###User: I'm feeling {emotion} today. {feelings_text} ###Response: ",
-                    "max_tokens": 512,
-                    "temperature": 0.7
-                }
+            prompt_data = {
+                "prompt": f"###System: You are an intelligent and empathetic chatbot capable of providing personalized suggestions to improve the well-being of the user. Your goal is to offer three practical and mood-boosting activities based on the user's current emotional state. Respond with three activities that can help improve someone's mood today. ###User: I'm feeling {emotion} today. {feelings_text} ###Response: ",
+                "max_tokens": 512,
+                "temperature": 0.7
+            }
 
-                print(f'Sending data: {json.dumps(prompt_data)}')
+            print(f'Sending data: {json.dumps(prompt_data)}')
 
-                # Create streaming response
-                async def stream_llm_response():
-                    url = 'http://localhost:2001/recommendation_analysis'
-                    timeout = httpx.Timeout(120.0)
-                    full_response = ''
-                    async with httpx.AsyncClient(timeout=timeout) as client:
-                        async with client.stream("POST", url, json=prompt_data) as response:
-                            async for chunk in response.aiter_text():
-                                # Yield each chunk as it arrives
-                                full_response += chunk
-                                yield chunk
-                    print()
-                    await update_sentiment_record(sentiment_id, full_response)
-                # Return a streaming response to the frontend
-                return StreamingHttpResponse(stream_llm_response(), content_type='text/plain')
+            # Create streaming response
+            async def stream_llm_response():
+                url = 'http://localhost:2001/recommendation_analysis'
+                timeout = httpx.Timeout(120.0)
+                full_response = ''
+                async with httpx.AsyncClient(timeout=timeout) as client:
+                    async with client.stream("POST", url, json=prompt_data) as response:
+                        async for chunk in response.aiter_text():
+                            # Yield each chunk as it arrives
+                            full_response += chunk
+                            yield chunk
+                print()
+                await update_sentiment_record(sentiment_id, full_response)
 
-            except json.JSONDecodeError:
-                return JsonResponse({"error": "Invalid JSON"}, status=400)
-            except Exception as e:
-                return JsonResponse({"error": str(e)}, status=500)
+            # Return a streaming response to the frontend
+            return StreamingHttpResponse(stream_llm_response(), content_type='text/plain')
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
 
 
 def generate_sentiment_report_pdf(request, user_id):
@@ -417,7 +457,7 @@ def generate_sentiment_report_pdf(request, user_id):
     drawing_pie.add(legend)
 
     elements.append(drawing_pie)
-    #elements.append(Spacer(1, 0.2 * inch))
+    # elements.append(Spacer(1, 0.2 * inch))
 
     # ===== SENTIMENT TRENDS (LINE CHART) =====
     elements.append(Paragraph("Sentiment Trends", subtitle_style))
@@ -436,7 +476,7 @@ def generate_sentiment_report_pdf(request, user_id):
 
     # Use filled circle markers with larger size
     lc.lines.symbol = makeMarker('FilledCircle')
-    #lc.lines.symbol.size = 6  # Larger marker size
+    # lc.lines.symbol.size = 6  # Larger marker size
 
     # Configure axes with larger text
     lc.categoryAxis.categoryNames = sentiment_data['trend_dates']
@@ -467,7 +507,7 @@ def generate_sentiment_report_pdf(request, user_id):
     drawing_line.add(lc)
 
     elements.append(drawing_line)
-    #elements.append(Spacer(1, 0.2 * inch))
+    # elements.append(Spacer(1, 0.2 * inch))
 
     # ===== TOPIC ANALYSIS (BAR CHART) =====
     elements.append(Paragraph("Topic Analysis", subtitle_style))
@@ -616,6 +656,8 @@ def generate_sentiment_report_pdf(request, user_id):
     response.write(pdf)
 
     return response
+
+
 def get_user_sentiment_data_report(user_email):
     print('User Id to be debugged:', user_email)
     user = CustomUser.objects.get(email=user_email)
@@ -702,11 +744,11 @@ def get_user_sentiment_data_report(user_email):
 def makeMarker(name):
     from reportlab.graphics.shapes import Circle
     if name == 'Circle':
-        return Circle(3, cy=3, r = 2, fillColor=colors.blue)
+        return Circle(3, cy=3, r=2, fillColor=colors.blue)
+
 
 @csrf_exempt
 def fetch_sentimentScore(request):
-
     if request.method == 'POST':
         duration = request.POST.get('duration')
         if request.POST.get('type') == 'all_users':
@@ -717,7 +759,8 @@ def fetch_sentimentScore(request):
 
         user_email = request.session.get('user_id')
         user = CustomUser.objects.get(email=user_email)
-        #data_sentiment_score = list(SentimentDB.objects.filter(user_name = user).values_list('sentiment_score', 'date_time'))
+        # data_sentiment_score = list(SentimentDB.objects.filter(user_name = user).values_list('sentiment_score', 'date_time'))
         data_sentiment_score = list(SentimentDB.objects.filter(
-            Q(user_name=user) & Q(date_time__gte=datetime.today().date() - timedelta(7))).values_list('sentiment_score', 'date_time'))
+            Q(user_name=user) & Q(date_time__gte=datetime.today().date() - timedelta(7))).values_list('sentiment_score',
+                                                                                                      'date_time'))
         return JsonResponse(data_sentiment_score, safe=False)
