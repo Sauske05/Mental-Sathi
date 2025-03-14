@@ -36,7 +36,7 @@ async function getSentimentScore(duration) {
 
         user_email = user_email_fetch.json()
 
-        const url = 'http://127.0.0.1:8000/sentiment/fetch_sentimentScore';
+        const url = 'http://127.0.0.1:8000/sentiment/fetch_sentimentScore/';
 
         const response = await fetch(url, {
             method: 'POST',

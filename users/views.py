@@ -1,5 +1,7 @@
 from typing import re
 
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.db.models import Avg, Max
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
@@ -378,4 +380,28 @@ def user_profile_update(request, **kwargs):
             print('Check Again Re')
             return JsonResponse({'error': str(e)}, status=500)
     print('CHECK LAST')
+@csrf_exempt
+def upload_profile_picture(request):
+    if request.method == 'POST' and request.FILES.get('image'):
+        user_email = request.session.get('user_id')
+        user = CustomUser.objects.get(email=user_email)
+        user_profile_ = UserProfile.objects.get(user_email=user)
 
+        # Delete old profile picture if not default
+        if user_profile_.profile_picture and user_profile_.profile_picture.name != "profile_pictures/default.png":
+            if default_storage.exists(user_profile_.profile_picture.name):
+                default_storage.delete(user_profile_.profile_picture.name)
+
+        # Save new file
+        image_file = request.FILES['image']
+        file_path = f'profile_pictures/user_{user_email}/{image_file.name}'
+
+        default_storage.save(file_path, ContentFile(image_file.read()))
+
+        # Update user profile
+        user_profile_.profile_picture = file_path
+        user_profile_.save()
+
+        return JsonResponse({"success": True, "path": file_path})
+
+    return JsonResponse({"success": False, "error": "Invalid request"})

@@ -20,5 +20,6 @@ urlpatterns = [
     path('admin/charts/', admin_charts, name='admin_charts'),
     path('admin/tables', admin_tables, name='admin_tables'),
     path('user_profile_update/', user_profile_update, name='user_profile_update'),
+path('upload_profile_picture/', upload_profile_picture, name='upload_profile_picture'),
    # re_path(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}),
 ]

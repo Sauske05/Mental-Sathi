@@ -18,199 +18,205 @@
 <div id="wrapper">
     {% include 'user_sidebar.html' %}
 
-        <div class="container">
-            <div class="profile-container">
-                <div class="profile-header">
-                    <div class="profile-picture-container">
-                        <div class="profile-picture-wrapper">
-                            <img src="" alt="Profile Picture" class="profile-picture" id="profilePicturePreview">
-                            <input type="file" class="form-control" id="profilePictureInput" accept="image/*"
-                                   style="display: none;">
-                            <button type="button" class="change-picture-btn" id="uploadPictureBtn">
-                                <i class="fas fa-camera"></i> Change Picture
-                            </button>
-                        </div>
+    <div class="container">
+        <div class="profile-container">
+            <div class="profile-header">
+                <div class="profile-picture-container">
+                    <div class="profile-picture-wrapper">
+                        <img src="{{ profile_data.profile_picture.url }}" alt="Profile Picture" class="profile-picture" id="profilePicturePreview">
+                        <input type="file" class="form-control" id="profilePictureInput" accept="image/*"
+                               style="display: none;">
+                        <button type="button" class="change-picture-btn" id="uploadPictureBtn">
+                            <i class="fas fa-camera"></i> Change Picture
+                        </button>
                     </div>
-                    <h3 class="mt-3">Alex Johnson</h3>
-                    <p class="mb-0">Web Developer</p>
                 </div>
+                <h3 class="mt-3"> {{ profile_data.first_name }} {{ profile_data.last_name }}</h3>
+            </div>
 
-                <div class="profile-content">
-                    <ul class="nav nav-pills mb-4 justify-content-center" id="profileTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="profile-tab" data-bs-toggle="pill"
-                                    data-bs-target="#profile"
-                                    type="button" role="tab" aria-controls="profile" aria-selected="true">Profile
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="edit-tab" data-bs-toggle="pill" data-bs-target="#edit"
-                                    type="button"
-                                    role="tab" aria-controls="edit" aria-selected="false">Edit Profile
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="password-tab" data-bs-toggle="pill" data-bs-target="#password"
-                                    type="button" role="tab" aria-controls="password" aria-selected="false">Change
-                                Password
-                            </button>
-                        </li>
-                    </ul>
+            <div class="profile-content">
+                <ul class="nav nav-pills mb-4 justify-content-center" id="profileTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="profile-tab" data-bs-toggle="pill"
+                                data-bs-target="#profile"
+                                type="button" role="tab" aria-controls="profile" aria-selected="true">Profile
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="edit-tab" data-bs-toggle="pill" data-bs-target="#edit"
+                                type="button"
+                                role="tab" aria-controls="edit" aria-selected="false">Edit Profile
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="password-tab" data-bs-toggle="pill" data-bs-target="#password"
+                                type="button" role="tab" aria-controls="password" aria-selected="false">Change
+                            Password
+                        </button>
+                    </li>
+                </ul>
 
-                    <div class="tab-content" id="profileTabsContent">
-                        <!-- Profile Information Tab -->
-                        <div class="tab-pane fade show active" id="profile" role="tabpanel"
-                             aria-labelledby="profile-tab">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="info-item">
-                                        <div class="info-label">Full Name</div>
-                                        <div class="info-value">{{ profile_data.first_name|default_if_none:"" }} {{ profile_data.last_name|default_if_none:"" }}</div>
+                <div class="tab-content" id="profileTabsContent">
+                    <!-- Profile Information Tab -->
+                    <div class="tab-pane fade show active" id="profile" role="tabpanel"
+                         aria-labelledby="profile-tab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">Full Name</div>
+                                    <div class="info-value">{{ profile_data.first_name|default_if_none:"" }} {{ profile_data.last_name|default_if_none:"" }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">Email</div>
+                                    <div class="info-value">{{ profile_data.user_email }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">Phone</div>
+                                    <div class="info-value">{{ profile_data.phone }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">Location</div>
+                                    <div class="info-value">San Francisco, CA</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">Job Title</div>
+                                    <div class="info-value">Senior Web Developer</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">Member Since</div>
+                                    <div class="info-value">January 15, 2022</div>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="info-item">
+                                    <div class="info-label">Bio</div>
+                                    <div class="info-value">
+                                        {{ profile_data.bio }}
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="info-item">
-                                        <div class="info-label">Email</div>
-                                        <div class="info-value">{{ profile_data.user_email }}</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="info-item">
-                                        <div class="info-label">Phone</div>
-                                        <div class="info-value">{{ profile_data.phone }}</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="info-item">
-                                        <div class="info-label">Location</div>
-                                        <div class="info-value">San Francisco, CA</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="info-item">
-                                        <div class="info-label">Job Title</div>
-                                        <div class="info-value">Senior Web Developer</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="info-item">
-                                        <div class="info-label">Member Since</div>
-                                        <div class="info-value">January 15, 2022</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="info-item">
-                                        <div class="info-label">Bio</div>
-                                        <div class="info-value">
-                                            {{ profile_data.bio }}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="info-item">
-                                        <div class="info-label">Social Links</div>
-                                        <div class="social-links">
-                                            <a href="{{ profile_data.twitter }}" class="social-icon"><i class="fab fa-twitter"></i></a>
-                                            <a href="{{ profile_data.linkedin }}" class="social-icon"><i class="fab fa-linkedin-in"></i></a>
-                                            <a href="{{ profile_data.github }}" class="social-icon"><i class="fab fa-github"></i></a>
-                                        </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="info-item">
+                                    <div class="info-label">Social Links</div>
+                                    <div class="social-links">
+                                        <a href="{{ profile_data.twitter }}" class="social-icon"><i
+                                                class="fab fa-twitter"></i></a>
+                                        <a href="{{ profile_data.linkedin }}" class="social-icon"><i
+                                                class="fab fa-linkedin-in"></i></a>
+                                        <a href="{{ profile_data.github }}" class="social-icon"><i
+                                                class="fab fa-github"></i></a>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Edit Profile Tab -->
-                        <div class="tab-pane fade" id="edit" role="tabpanel" aria-labelledby="edit-tab">
-                            <form id="profileForm" action="{% url 'user_profile_update' %}" method="post">
-                                {% csrf_token %}
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="firstName" class="form-label">First Name</label>
-                                        <input type="text" class="form-control" id="firstName" name="first_name" value= {{ profile_data.first_name }} >
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="lastName" class="form-label">Last Name</label>
-                                        <input type="text" class="form-control" id="lastName" name="last_name" value= {{ profile_data.last_name }} >
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="email" class="form-label">Email</label>
-                                        <input type="email" class="form-control" id="email"
-                                               value= {{ profile_data.user_email }} readonly>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="phone" class="form-label">Phone</label>
-                                        <input type="tel" class="form-control" id="phone"  name = 'phone_number' value= {{ profile_data.phone }}>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="location" class="form-label">Location</label>
-                                        <input type="text" class="form-control" id="location" value="San Francisco, CA">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="jobTitle" class="form-label">Job Title</label>
-                                        <input type="text" class="form-control" id="jobTitle"
-                                               value="Senior Web Developer">
-                                    </div>
-                                    <div class="col-12 mb-3">
-                                        <label for="bio" class="form-label">Bio</label>
-                                        <textarea class="form-control" name="bio" id="bio" rows="4" >{{ profile_data.bio }}</textarea>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="twitter" class="form-label">Twitter</label>
-                                        <input type="url" class="form-control" id="twitter"
-                                               name = 'twitter_url' value= {{ profile_data.twitter }} >
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="linkedin" class="form-label">LinkedIn</label>
-                                        <input type="url" class="form-control" id="linkedin"
-                                               name = 'linkedin_url' value= {{ profile_data.linkedin }}>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="github" class="form-label">GitHub</label>
-                                        <input type="url" class="form-control" id="github"
-                                               name = 'github_url' value= {{ profile_data.github }}>
-                                    </div>
-
-                                    <div class="col-12 text-center mt-3">
-                                        <button type="submit" class="btn btn-primary px-5" id="saveProfileBtn">Save
-                                            Changes
-                                        </button>
-                                    </div>
+                    <!-- Edit Profile Tab -->
+                    <div class="tab-pane fade" id="edit" role="tabpanel" aria-labelledby="edit-tab">
+                        <form id="profileForm" action="{% url 'user_profile_update' %}" method="post">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="firstName" class="form-label">First Name</label>
+                                    <input type="text" class="form-control" id="firstName" name="first_name"
+                                           value={{ profile_data.first_name }}>
                                 </div>
-                            </form>
-                        </div>
-
-                        <!-- Change Password Tab -->
-                        <div class="tab-pane fade" id="password" role="tabpanel" aria-labelledby="password-tab">
-                            <form id="passwordForm" class="row justify-content-center">
-                                <div class="col-md-8">
-                                    <div class="mb-4">
-                                        <label for="currentPassword" class="form-label">Current Password</label>
-                                        <input type="password" class="form-control" id="currentPassword"
-                                               placeholder="Enter your current password">
-                                    </div>
-                                    <div class="mb-4">
-                                        <label for="newPassword" class="form-label">New Password</label>
-                                        <input type="password" class="form-control" id="newPassword"
-                                               placeholder="Enter new password" disabled>
-                                    </div>
-                                    <div class="mb-4">
-                                        <label for="confirmPassword" class="form-label">Confirm New Password</label>
-                                        <input type="password" class="form-control" id="confirmPassword"
-                                               placeholder="Confirm new password" disabled>
-                                    </div>
-                                    <div class="text-center mt-4">
-                                        <button type="button" class="btn btn-primary px-5" id="changePasswordBtn">Change
-                                            Password
-                                        </button>
-                                    </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="lastName" class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" id="lastName" name="last_name"
+                                           value={{ profile_data.last_name }}>
                                 </div>
-                            </form>
-                        </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email"
+                                           value={{ profile_data.user_email }} readonly>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="phone" class="form-label">Phone</label>
+                                    <input type="tel" class="form-control" id="phone" name='phone_number'
+                                           value= {{ profile_data.phone }}>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="location" class="form-label">Location</label>
+                                    <input type="text" class="form-control" id="location" value="San Francisco, CA">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="jobTitle" class="form-label">Job Title</label>
+                                    <input type="text" class="form-control" id="jobTitle"
+                                           value="Senior Web Developer">
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label for="bio" class="form-label">Bio</label>
+                                    <textarea class="form-control" name="bio" id="bio"
+                                              rows="4">{{ profile_data.bio }}</textarea>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="twitter" class="form-label">Twitter</label>
+                                    <input type="url" class="form-control" id="twitter"
+                                           name='twitter_url' value={{ profile_data.twitter }}>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="linkedin" class="form-label">LinkedIn</label>
+                                    <input type="url" class="form-control" id="linkedin"
+                                           name='linkedin_url' value= {{ profile_data.linkedin }}>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="github" class="form-label">GitHub</label>
+                                    <input type="url" class="form-control" id="github"
+                                           name='github_url' value= {{ profile_data.github }}>
+                                </div>
+
+                                <div class="col-12 text-center mt-3">
+                                    <button type="submit" class="btn btn-primary px-5" id="saveProfileBtn">Save
+                                        Changes
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Change Password Tab -->
+                    <div class="tab-pane fade" id="password" role="tabpanel" aria-labelledby="password-tab">
+                        <form id="passwordForm" class="row justify-content-center">
+                            <div class="col-md-8">
+                                <div class="mb-4">
+                                    <label for="currentPassword" class="form-label">Current Password</label>
+                                    <input type="password" class="form-control" id="currentPassword"
+                                           placeholder="Enter your current password">
+                                </div>
+                                <div class="mb-4">
+                                    <label for="newPassword" class="form-label">New Password</label>
+                                    <input type="password" class="form-control" id="newPassword"
+                                           placeholder="Enter new password" disabled>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" id="confirmPassword"
+                                           placeholder="Confirm new password" disabled>
+                                </div>
+                                <div class="text-center mt-4">
+                                    <button type="button" class="btn btn-primary px-5" id="changePasswordBtn">Change
+                                        Password
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const uploadBtn = document.getElementById('uploadPictureBtn');
@@ -219,18 +225,122 @@
 
 
         //Pop up Message Display while updating profile!
+        const updateButton = document.getElementById("saveProfileBtn")
+        const form = document.getElementById("profileForm");
 
 
-    function showPopup(message, type) {
-        let popup = document.getElementById("popupMessage");
-        popup.textContent = message;
-        popup.className = `alert alert-${type} text-center`;
-        popup.style.display = "block";
+        const BASE_URL = "http://127.0.0.1:8000";
 
-        setTimeout(() => {
-            popup.style.display = "none";
-        }, 3000);
-    }
+        document.getElementById("profilePictureInput").addEventListener("change", async (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    document.getElementById("profilePicturePreview").src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+
+                // Prepare FormData for image upload
+                const formData = new FormData();
+                formData.append("image", file);
+                formData.append("image", file);
+
+                await fetch('/user/upload_profile_picture/', {
+                    method: "POST",
+                    body: formData,
+                    headers: {
+                        "X-CSRFToken": getCSRFToken()  // Ensure CSRF token is included
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert(data.success ? "Image uploaded successfully!" : "Image upload failed!");
+                    })
+                    .catch(error => console.error("Upload Error:", error));
+            }
+        });
+
+
+        updateButton.addEventListener('click', async (e) => {
+            e.preventDefault(); // Prevent default form submission
+
+            // Get form data
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch('/user/user_profile_update/', {  // Replace with your actual URL
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-Token': getCSRFToken(),  // Add CSRF token to headers
+                    },
+                    credentials: 'same-origin'  // Include cookies in the request
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                console.log(response.status)
+                console.log(data)
+                // Show success message
+                if (response.status === 200) {
+                    showPopup('Successfully updated profile of the user!');
+                    // Optionally reset form
+                    // form.reset();
+                } else {
+                    showPopup('Error: ' + (data.message || 'Profile update failed'));
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showPopup('An error occurred while updating the profile');
+            }
+        })
+
+
+        // Function to show popup message
+// Function to get CSRF token from cookie
+        function getCSRFToken() {
+            const name = 'csrftoken';
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function showPopup(message) {
+            const popup = document.createElement('div');
+            popup.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #4CAF50;
+        color: white;
+        padding: 15px 25px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        z-index: 1000;
+    `;
+            popup.textContent = message;
+            document.body.appendChild(popup);
+
+            // Remove popup after 3 seconds
+            setTimeout(() => {
+                popup.remove();
+            }, 3000);
+        }
 
 
         // Trigger file input click when button is clicked

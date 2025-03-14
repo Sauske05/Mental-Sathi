@@ -41,12 +41,17 @@ class CustomUser(AbstractUser):
             self.password = make_password(self.password)
         super().save(*args, **kwargs)
 
+def user_directory_path(instance, filename):
+    """Function to store images in 'media/profile_pictures/user_<id>/<filename>'."""
+    if instance.user_email and instance.user_email.id:
+        return f'profile_pictures/user_{instance.user_email.id}/{filename}'
+    return f'profile_pictures/default/{filename}'  # Fallback path
 
 class UserProfile(models.Model):
     user_email = models.OneToOneField(CustomUser, on_delete=models.CASCADE, to_field='email')
     first_name = models.CharField(max_length=120, blank=True, null=True)
     last_name = models.CharField(max_length=120, blank=True, null=True)
-    profile_url = models.URLField(blank=True, null=True)
+    profile_picture = models.ImageField(upload_to=user_directory_path, default='profile_pictures/default.png')
     phone = models.CharField(max_length=120, blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
     linkedin = models.URLField(blank=True, null=True)

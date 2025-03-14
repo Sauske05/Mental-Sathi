@@ -55,7 +55,7 @@
             right: 10px;
             background: #fff;
             border: 1px solid #ccc;
-            border-radius: 50%;
+            /*border-radius: 50%;*/
             padding: 5px;
             cursor: pointer;
         }
