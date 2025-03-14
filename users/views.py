@@ -270,7 +270,7 @@ def user_dashboard(request):
 
 
 def user_profile(request):
-    return render(request, 'user_template/profile.html')
+    return render(request, 'user_template/profile_test.html')
 
 
 def user_charts(request):
