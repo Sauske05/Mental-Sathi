@@ -41,6 +41,19 @@ class CustomUser(AbstractUser):
             self.password = make_password(self.password)
         super().save(*args, **kwargs)
 
+
+class UserProfile(models.Model):
+    user_email = models.OneToOneField(CustomUser, on_delete=models.CASCADE, to_field='email')
+    first_name = models.CharField(max_length=120, blank=True, null=True)
+    last_name = models.CharField(max_length=120, blank=True, null=True)
+    profile_url = models.URLField(blank=True, null=True)
+    phone = models.CharField(max_length=120, blank=True, null=True)
+    bio = models.TextField(blank=True, null=True)
+    linkedin = models.URLField(blank=True, null=True)
+    twitter = models.URLField(blank=True, null=True)
+    github = models.URLField(blank=True, null=True)
+
+
 NEPAL_TZ = pytz.timezone('Asia/Kathmandu')
 class DashboardRecords(models.Model):
     user_name = models.ForeignKey(CustomUser, on_delete=models.CASCADE, to_field='email')

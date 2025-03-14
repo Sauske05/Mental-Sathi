@@ -19,6 +19,6 @@ urlpatterns = [
     path('admin/blank/', blank_page, name='admin_blank_page'),
     path('admin/charts/', admin_charts, name='admin_charts'),
     path('admin/tables', admin_tables, name='admin_tables'),
-    
+    path('user_profile_update/', user_profile_update, name='user_profile_update'),
    # re_path(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}),
 ]

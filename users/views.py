@@ -1,6 +1,9 @@
+from typing import re
+
 from django.db.models import Avg, Max
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.renderers import TemplateHTMLRenderer
@@ -10,7 +13,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib import messages
 from django.contrib.sessions.models import Session
 from .forms import LoginForm
-from .models import CustomUser
+from .models import CustomUser, UserProfile
 from .models import DashboardRecords
 from datetime import timedelta, datetime
 from django.utils.timezone import now
@@ -208,6 +211,9 @@ def signup(request):
                 dashboard_init = DashboardRecords(user_name=user_filter, login_streak=0, number_of_login_days=0,
                                                   positive_streak=0)
                 dashboard_init.save()
+
+                user_profile_init = UserProfile(user_email=user_filter, first_name=user_filter.first_name, last_name = user_filter.last_name)
+                user_profile_init.save()
             messages.success(request, "Account created successfully! Please log in.")
             return render(request, 'user_template/Login_page.html')
         except Exception as e:
@@ -270,7 +276,10 @@ def user_dashboard(request):
 
 
 def user_profile(request):
-    return render(request, 'user_template/profile_test.html')
+    user_email = request.session.get('user_id')
+    user = CustomUser.objects.get(email=user_email)
+    profile_data = UserProfile.objects.get(user_email=user)
+    return render(request, 'user_template/profile_test.html', {'profile_data': profile_data})
 
 
 def user_charts(request):
@@ -288,3 +297,85 @@ def logout_view(request):
     logout(request)
     request.session.flush()
     return redirect('login')
+
+
+def authenticate_user_profile_update(func):
+    @wraps(func)
+    def wrapper(request, **kwargs):
+        try:
+            if request.method == 'POST':
+                user_data = {
+                    'first_name': request.POST.get('first_name'),
+                    'last_name': request.POST.get('last_name'),
+                    'email': request.session.get('user_id'),
+                    'phone': request.POST.get('phone_number'),
+                    'bio': request.POST.get('bio'),
+                    'twitter_url': request.POST.get('twitter_url'),
+                    'linkedin_url': request.POST.get('linkedin_url'),
+                    'github_url': request.POST.get('github_url'),
+                }
+
+                # Validate phone number (assuming numeric with optional country code)
+                # if user_data['phone'] and not re.match(r'^\+?[\d\s-]+$', user_data['phone']):
+                #     return JsonResponse({'error': 'Invalid phone number'}, status=400)
+                #
+                # # Validate URLs (if provided)
+                # url_pattern = re.compile(
+                #     r'^(https?://)?(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(/[\w-]*)*$'
+                # )
+                # for field, value in [('Twitter URL', user_data['twitter_url']), ('LinkedIn URL', user_data['linkedin_url']),
+                #                      ('GitHub URL', user_data['github_url'])]:
+                #     if value and not url_pattern.match(value):
+                #         return JsonResponse({'error': f'Invalid {field}'}, status=400)
+
+                kwargs.update(user_data)
+        except Exception as e:
+            return e
+        return func(request, **kwargs)
+    return wrapper
+
+@csrf_exempt
+@authenticate_user_profile_update
+def user_profile_update(request, **kwargs):
+    print('CHECK')
+    if request.method == 'POST':
+        try:
+            first_name = kwargs.get('first_name')
+            last_name = kwargs.get('last_name')
+            email = kwargs.get('email')
+            phone = kwargs.get('phone')
+            bio = kwargs.get('bio')
+            twitter_url = kwargs.get('twitter_url')
+            linkedin_url = kwargs.get('linkedin_url')
+            github_url = kwargs.get('github_url')
+
+            print('Github URL:', github_url)
+            with transaction.atomic():
+                user = CustomUser.objects.get(email=email)
+                user.first_name = first_name
+                user.last_name = last_name
+                user.save()
+
+                profile = UserProfile.objects.get(user_email=user)
+                profile.phone = phone
+                profile.bio = bio
+                profile.twitter = twitter_url
+                profile.linkedin = linkedin_url
+                profile.github = github_url
+                profile.first_name = first_name
+                profile.last_name = last_name
+                profile.save()
+
+            return JsonResponse({'message': 'Profile updated successfully'}, status=200)
+        except CustomUser.DoesNotExist:
+            print('Check')
+            return JsonResponse({'error': 'User not found'}, status=404)
+
+        except UserProfile.DoesNotExist:
+            print('Check Again')
+            return JsonResponse({'error': 'Profile of the user not created!'}, status=404)
+        except Exception as e:
+            print('Check Again Re')
+            return JsonResponse({'error': str(e)}, status=500)
+    print('CHECK LAST')
+
