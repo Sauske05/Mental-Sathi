@@ -192,17 +192,17 @@
                                 <div class="mb-4">
                                     <label for="currentPassword" class="form-label">Current Password</label>
                                     <input type="password" class="form-control" id="currentPassword"
-                                           placeholder="Enter your current password">
+                                           placeholder="Enter your current password" name = "currentPassword">
                                 </div>
                                 <div class="mb-4">
                                     <label for="newPassword" class="form-label">New Password</label>
                                     <input type="password" class="form-control" id="newPassword"
-                                           placeholder="Enter new password" disabled>
+                                           placeholder="Enter new password" name = "newPassword">
                                 </div>
                                 <div class="mb-4">
                                     <label for="confirmPassword" class="form-label">Confirm New Password</label>
                                     <input type="password" class="form-control" id="confirmPassword"
-                                           placeholder="Confirm new password" disabled>
+                                           placeholder="Confirm new password" name = "confirmPassword">
                                 </div>
                                 <div class="text-center mt-4">
                                     <button type="button" class="btn btn-primary px-5" id="changePasswordBtn">Change
@@ -223,7 +223,8 @@
         const fileInput = document.getElementById('profilePictureInput');
         const previewImg = document.getElementById('profilePicturePreview');
 
-
+        const passwordChangeBtn = document.getElementById('changePasswordBtn')
+        const changePasswordForm = document.getElementById('passwordForm')
         //Pop up Message Display while updating profile!
         const updateButton = document.getElementById("saveProfileBtn")
         const form = document.getElementById("profileForm");
@@ -261,6 +262,37 @@
             }
         });
 
+        passwordChangeBtn.addEventListener('click', async() => {
+            const passwordFormData = new FormData(changePasswordForm)
+
+            try {
+                const response = await fetch('/user/user_password_update/', {
+                    method : 'POST',
+                    body : passwordFormData,
+                    headers : {
+                        'content-type' : 'application/json',
+                        'X-CRSF-Token' : getCSRFToken()
+                    }
+                })
+                if (!response.ok) {
+                    throw new Error('Network Error During Password Change')
+                }
+                let response_data = await response.json()
+
+                if (response.status === 200) {
+                    //showPopup('Successfully updated password of the user!');
+                    showPopup(response_data.message);
+                    // Optionally reset form
+                    // form.reset();
+                } else {
+                    showPopup('Error: ' + (response_data.message || 'Password update failed'));
+                }
+            }
+            catch (e) {
+                console.error('Error:', e);
+                showPopup('An error occurred while updating the profile');
+            }
+        });
 
         updateButton.addEventListener('click', async (e) => {
             e.preventDefault(); // Prevent default form submission

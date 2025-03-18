@@ -405,3 +405,32 @@ def upload_profile_picture(request):
         return JsonResponse({"success": True, "path": file_path})
 
     return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+@csrf_exempt
+def user_password_update(request):
+    if request.method == 'POST':
+        try:
+            user_email = request.session.get('user_id')
+            user = CustomUser.objects.get(email=user_email)
+            current_password = request.POST.get('currentPassword')
+            new_password = request.POST.get('newPassword')
+            re_password = request.POST.get('confirmPassword')
+
+            if check_password(current_password, user.password):
+                pass
+            else:
+                message = 'The password you entered is incorrect.'
+                return JsonResponse({'message': message}, status=401)
+
+            if new_password != re_password:
+                message_2 = "The new password doesn't match."
+                return JsonResponse({'message' : message_2}, status=401)
+
+            user.password = new_password
+            user.save()
+            return JsonResponse({'success': True, 'message': 'Password updated successfully'})
+        except CustomUser.DoesNotExist as e:
+            return JsonResponse({'message': str(e)}, status=500)
+
+
