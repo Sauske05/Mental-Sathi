@@ -4,8 +4,6 @@ from MentalSathi import views as root_views
 from django.urls import reverse
 # Create your views here.
 
-
-
 def chat_redirect(request):
     session_id = request.session.session_key
     if not session_id:
@@ -16,6 +14,7 @@ def chat_redirect(request):
 
     # Create a unique room name
     room_name = f"{session_id}_{user_id}"
+    #room_name = 'arun'
 
     return redirect(chat_room, room_name = room_name)
 
