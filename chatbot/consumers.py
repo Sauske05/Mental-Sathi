@@ -58,20 +58,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @sync_to_async
     def save_chat_message(self, user_query, bot_response):
         """Save chat messages in the database"""
-        # user = self.user if self.user.is_authenticated else None
-        user = self.scope["user"]
-        if user.is_authenticated:
-            user_id = user.id  # This will give you the user ID
-        else:
-            user_id = None  # If the user is not authenticated
+        user_email = self.scope['session']['user_id']
         session = Session.objects.get(session_key=self.session_id)
-        print(user)
+        print(user_email)
         print(session)
         Chat.objects.create(
-            user_id=user,
+            user_id=user_email,
             session_id=session,
-            user_query=user_query,
-            assistant_text=bot_response,
+            context = f"User : {user_query} \n Assistant : {bot_response}"
         )
 
     async def chat_message(self, event):
@@ -83,20 +77,26 @@ class ChatConsumer(AsyncWebsocketConsumer):
         }))
 
     async def stream_chatbot_response(self, user_input):
-            prompt_ = prompt(user_input)
-            data = {"prompt": prompt_}
+            #prompt_ = prompt(user_input)
+            user_email = self.scope['session']['user_id']
+            data = {"prompt": user_input, "user_id" : user_email}
             headers = {"Content-Type": "application/json"}
-
+            print(f'The user id while streaming chatbot response : {user_email}')
             async def stream_llm_response():
                 url = 'http://localhost:2001/chatbot'
                 timeout = httpx.Timeout(120.0)
 
                 async with httpx.AsyncClient(timeout=timeout) as client:
-                    async with client.stream("POST", url, json=data) as response:
+                    assistant_response = ''
+                    async with client.stream("POST", url, json=data, headers = headers) as response:
                         async for chunk in response.aiter_text():
                             # Yield each chunk as it arrives
                             print(chunk)
+                            assistant_response = assistant_response + chunk
                             yield chunk
+                    await self.save_chat_message(user_input, assistant_response)
+                    print('Content Saved in the Database')
+
 
             async for token in stream_llm_response():
                 #await self.send(text_data=token)
