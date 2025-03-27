@@ -66,6 +66,8 @@ class DashboardRecords(models.Model):
     login_streak = models.IntegerField()
     positive_streak = models.IntegerField()
     last_login_date = models.DateTimeField(default=None, null=True)
+    mood_saved_time = models.DateTimeField(default=None, null=True)
+    is_mood_saved = models.BooleanField(null=True, default=None)
 
 
 

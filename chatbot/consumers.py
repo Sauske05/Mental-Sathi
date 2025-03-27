@@ -89,13 +89,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 async with httpx.AsyncClient(timeout=timeout) as client:
                     assistant_response = ''
                     async with client.stream("POST", url, json=data, headers = headers) as response:
+                        #print(f'This is the response -> {response}')
+                        print(f'This is the response status > {response.status_code}')
+
                         async for chunk in response.aiter_text():
                             # Yield each chunk as it arrives
                             print(chunk)
                             assistant_response = assistant_response + chunk
                             yield chunk
-                    await self.save_chat_message(user_input, assistant_response)
-                    print('Content Saved in the Database')
+                    if response.status_code == 200:
+                        await self.save_chat_message(user_input, assistant_response)
+                        print('Content Saved in the Database')
 
 
             async for token in stream_llm_response():

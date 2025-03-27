@@ -774,3 +774,34 @@ def fetch_sentimentScore(request):
             Q(user_name=user) & Q(date_time__gte=datetime.today().date() - timedelta(7))).values_list('sentiment_score',
                                                                                                       'date_time'))
         return JsonResponse(data_sentiment_score, safe=False)
+
+
+def fetch_mood_saved_data(request):
+    user_email = request.session.get('user_id')
+    print('The user email', user_email)
+    user = CustomUser.objects.get(email=user_email)
+    if request.method == 'GET':
+        mood_data = DashboardRecords.objects.filter(user_name=user).values_list('mood_saved_time', 'is_mood_saved')
+        mood_data = list(*mood_data)
+        print(f'Mood data fetch test : {mood_data}')
+        return JsonResponse({
+            'mood_saved_time' : mood_data[0],
+            'is_mood_saved': mood_data[1]
+        }, safe=False)
+
+    if request.method == 'PUT':
+        data = json.loads(request.body)
+        if data.get('mood_update') is True:
+            mood_data_update = DashboardRecords.objects.get(user_name=user)
+            mood_data_update.mood_saved_time = datetime.today().date()
+            mood_data_update.save()
+            return JsonResponse({
+                'response' : 'Successfully Update the mood data'
+            })
+        else:
+            return JsonResponse({
+                'response' : 'Mood Update Failed'
+            })
+
+
+

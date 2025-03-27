@@ -140,7 +140,7 @@
 
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
                 <script>
-                    document.addEventListener('DOMContentLoaded', function () {
+                    document.addEventListener('DOMContentLoaded', async function () {
                         const emotionButtons = document.querySelectorAll('.emotion-btn');
                         const submitButton = document.getElementById('submitButton');
                         const thankYouMessage = document.getElementById('thankYouMessage');
@@ -150,12 +150,48 @@
                         let selectedEmotion = null;
 
                         // Check if mood has already been saved today
-                        if (localStorage.getItem('moodSavedToday') === 'true') {
-                            showRecommendationUI();
-                        } else {
+                        //if (localStorage.getItem('moodSavedToday') === 'true') {
+                        //    showRecommendationUI();
+                        //} else {
                             // Enable buttons if mood hasn't been saved today
-                            enableEmotionButtons();
+                        //    enableEmotionButtons();
+                        //}
+                        try {
+                            const mood_url = '/sentiment/fetch_mood_saved_data/'
+                            let mood_response = await fetch(mood_url, {
+
+                                method: "GET", headers: {
+                                    "Content-Type": "application/json",
+                                    'X-CSRFToken': getCSRFToken()
+                                },
+                            })
+                            let mood_response_json = await mood_response.json()
+                            console.log(`This is the mood response console test : ${mood_response_json}`)
+                            //console.log(`Data Check: ${mood_response_json['mood_saved_time']}`)
+                            if (mood_response_json['mood_saved_time'] === null) {
+                                enableEmotionButtons();
+                            } else if (mood_response_json['mood_saved_time']) {
+                                let moodSavedTime = new Date(mood_response_json['mood_saved_time']);  // Convert to Date object
+                                let currentTime = new Date();
+
+                                // Calculate time difference in milliseconds
+                                let timeDifference = currentTime - moodSavedTime;
+
+                                // Convert to days
+                                let differenceInDays = timeDifference / (1000 * 60 * 60 * 24);
+
+                                if (differenceInDays >= 1) {
+                                    enableEmotionButtons();
+                                } else {
+                                    showRecommendationUI();
+                                }
+                            }
+
+                        } catch (e) {
+                            throw e;
                         }
+
+
                         emotionButtons.forEach(button => {
                             button.addEventListener('click', function () {
                                 // Remove selection from all buttons
@@ -214,7 +250,12 @@
                                                 // Show thank you message with animation after stream completes
                                                 thankYouMessage.classList.remove('d-none');
                                                 // Mark mood as saved today in localStorage
-                                                localStorage.setItem('moodSavedToday', 'true');
+                                                //localStorage.setItem('moodSavedToday', 'true');
+                                                const mood_update = {
+                                                    'mood_update' : true
+                                                }
+                                                updateMoodData(mood_update)
+
                                                 return;
                                             }
 
@@ -251,6 +292,23 @@
 
                             setTimeout(showRecommendationUI, 60);
                         });
+
+                        async function updateMoodData(mood_update) {
+                            try {
+                                let response = await fetch('/sentiment/fetch_mood_saved_data/', {
+                                    method : 'PUT',
+                                    headers : {
+                                        'Content-Type' : 'application/json',
+                                        'X-CSRFToken' : getCSRFToken(),
+                                    },
+                                    body : JSON.stringify(mood_update)
+                                })
+                                return await response
+                            } catch (error) {
+                                console.error('Error updating the mood data', error)
+                            }
+                        }
+
 
                         function showRecommendationUI() {
                             // Hide the mood form
