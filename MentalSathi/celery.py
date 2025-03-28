@@ -25,6 +25,6 @@ def debug_task(self):
 app.conf.beat_schedule = {
     'send-email-every-day': {
         'task': 'users.tasks.send_scheduled_email',
-        'schedule': crontab(hour='10', minute='0'),
+        'schedule': crontab(hour='11', minute='10'),
     },
 }

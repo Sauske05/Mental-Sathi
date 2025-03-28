@@ -2,6 +2,9 @@ from celery import shared_task
 from django.core.mail import send_mail
 import os
 from dotenv import load_dotenv
+from tempfile import NamedTemporaryFile
+from sentiment_analysis.views import report_generator
+from django.core.mail import EmailMessage
 load_dotenv()
 @shared_task
 def test_celery():
@@ -9,10 +12,31 @@ def test_celery():
 
 @shared_task
 def send_scheduled_email():
-    subject = "Automated Email from MentalSathi"
-    message = "This is a scheduled email."
+    subject = "Automated Report from MentalSathi"
+    message = "Please find the attached report."
     from_email = os.getenv("APP_EMAIL")
     recipient_list = ["honkainew123@gmail.com"]
 
-    send_mail(subject, message, from_email, recipient_list)
-    return "Email sent successfully!"
+    # Generate the PDF report
+    for email in recipient_list:
+        pdf_content = report_generator(email)
+
+        # Create a temporary file to store the generated PDF
+        with NamedTemporaryFile(delete=False, suffix='.pdf') as tmpfile:
+            tmpfile.write(pdf_content)  # Write the content to the temporary file
+            tmpfile_path = tmpfile.name
+
+        email = EmailMessage(
+            subject,
+            message,
+            from_email,
+            recipient_list
+        )
+
+        email.attach_file(tmpfile_path)
+
+        email.send()
+
+        os.remove(tmpfile_path)
+
+        return f"Email with report sent successfully to {email}!"

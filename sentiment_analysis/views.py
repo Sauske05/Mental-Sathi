@@ -242,9 +242,11 @@ async def sentiment_process(request):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
-
 def generate_sentiment_report_pdf(request, user_id):
     user_email = request.session.get('user_id')
+    return report_generator(user_email, False)
+
+def report_generator(user_email, is_task:bool=True):
     user = CustomUser.objects.get(email=user_email)
     print(f'The real user king {user_email}')
     sentiment_data = get_user_sentiment_data_report(user_email)
@@ -649,13 +651,15 @@ def generate_sentiment_report_pdf(request, user_id):
     # Get the value of the BytesIO buffer and write response
     pdf = buffer.getvalue()
     buffer.close()
+    if is_task is False:
+        # Create HTTP response with PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="sentiment_report_{user.username}_{current_time}.pdf"'
+        response.write(pdf)
 
-    # Create HTTP response with PDF
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="sentiment_report_{user.username}_{current_time}.pdf"'
-    response.write(pdf)
-
-    return response
+        return response
+    else:
+        return pdf
 
 
 def get_user_sentiment_data_report(user_email):
