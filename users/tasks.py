@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from tempfile import NamedTemporaryFile
 from sentiment_analysis.views import report_generator
 from django.core.mail import EmailMessage
+from users.models import CustomUser
 load_dotenv()
 @shared_task
 def test_celery():
@@ -15,7 +16,10 @@ def send_scheduled_email():
     subject = "Automated Report from MentalSathi"
     message = "Please find the attached report."
     from_email = os.getenv("APP_EMAIL")
-    recipient_list = ["honkainew123@gmail.com"]
+    users = CustomUser.objects.all().values_list('email', flat=True)
+    users = list(users)
+    print('The list of users being sent the scheduled email: ', users)
+    recipient_list = users
 
     # Generate the PDF report
     for email in recipient_list:

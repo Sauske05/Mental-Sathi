@@ -157,7 +157,7 @@ def signup_authentication(func):
             password = request.POST.get('password')
             retype_password = request.POST.get('re_password')
             agree_terms = request.POST.get('terms_checkbox')
-
+            phone_number = request.POST.get('phone_number')
             # Validation checks
             if not first_name or not last_name or not email or not password or not retype_password:
                 message = 'All fields are required'
@@ -189,7 +189,8 @@ def signup_authentication(func):
                 'first_name': first_name,
                 'last_name': last_name,
                 'email': email,
-                'password': password
+                'password': password,
+                'phone_number': phone_number,
             }
         return func(request, **kwargs)
 
@@ -205,7 +206,7 @@ def signup(request):
             # #print(f'user_data {user_data.keys()}')
             with transaction.atomic():
                 user = CustomUser(first_name=user_data.get("first_name"), last_name=user_data.get("last_name"),
-                                  password=user_data.get("password"), email=user_data.get("email"))
+                                  password=user_data.get("password"), email=user_data.get("email"), phone_number=user_data.get("phone_number"))
                 user.save()
                 # User = get_user_model()
                 user_filter = CustomUser.objects.get(email=user_data.get("email"))
@@ -434,3 +435,80 @@ def user_password_update(request):
             return JsonResponse({'message': str(e)}, status=500)
 
 
+# views.py
+from django.shortcuts import render, redirect
+from django.contrib.auth import login
+from django.contrib.auth.models import User
+from .models import OTPRequest
+from .forms import PhoneNumberForm, OTPVerificationForm, PasswordResetForm
+from .utils import send_otp_sms
+from django.contrib import messages
+
+
+def request_otp(request):
+    if request.method == 'POST':
+
+        form = PhoneNumberForm(request.POST)
+        if form.is_valid():
+            phone_number = form.cleaned_data['phone_number']
+            try:
+                #user = CustomUser.objects.get(profile__phone_number=phone_number)  # Assuming phone number is in profile
+                user_email = request.session.get('user_id')
+                user = CustomUser.objects.get(email=user_email)
+                otp_request = OTPRequest.objects.create(user=user, phone_number=phone_number)
+                otp = otp_request.generate_otp()
+                send_otp_sms(phone_number, otp)
+                request.session['otp_request_id'] = otp_request.id
+                return redirect('verify_otp')
+            except CustomUser.DoesNotExist:
+                messages.error(request, 'No user found with this phone number')
+    else:
+        form = PhoneNumberForm()
+        user_phone = CustomUser.objects.filter(email=request.session.get('user_id')).values('phone_number')[0]
+        print(f'Users phone numbere: {user_phone}')
+    return render(request, 'user_template/request_otp.html', {'form': form})
+
+
+def verify_otp(request):
+    if 'otp_request_id' not in request.session:
+        return redirect('user_template/request_otp.html')
+
+    otp_request = OTPRequest.objects.get(id=request.session['otp_request_id'])
+
+    if request.method == 'POST':
+        form = OTPVerificationForm(request.POST)
+        if form.is_valid():
+            if form.cleaned_data['otp'] == otp_request.otp:
+                otp_request.is_verified = True
+                otp_request.save()
+                return redirect('reset_password')
+            else:
+                messages.error(request, 'Invalid OTP')
+    else:
+        form = OTPVerificationForm()
+    return render(request, 'user_template/verify_otp.html', {'form': form})
+
+
+def reset_password(request):
+    if 'otp_request_id' not in request.session:
+        return redirect('request_otp')
+
+    otp_request = OTPRequest.objects.get(id=request.session['otp_request_id'])
+    if not otp_request.is_verified:
+        return redirect('verify_otp')
+
+    if request.method == 'POST':
+        form = PasswordResetForm(request.POST)
+        if form.is_valid():
+            if form.cleaned_data['new_password'] == form.cleaned_data['confirm_password']:
+                user = otp_request.user
+                user.set_password(form.cleaned_data['new_password'])
+                user.save()
+                del request.session['otp_request_id']
+                messages.success(request, 'Password reset successfully')
+                return redirect('login')
+            else:
+                messages.error(request, 'Passwords do not match')
+    else:
+        form = PasswordResetForm()
+    return render(request, 'user_template/reset_password.html', {'form': form})

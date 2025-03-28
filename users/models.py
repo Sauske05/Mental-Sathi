@@ -28,6 +28,7 @@ class CustomUser(AbstractUser):
     username = None
     email = models.EmailField('email address',unique=True)
     profile_picture = models.URLField(blank=True, null=True)
+    phone_number = models.CharField(max_length=14,blank=True, null=True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS =['first_name', 'last_name']
     #objects = UserManager()
@@ -70,5 +71,15 @@ class DashboardRecords(models.Model):
     is_mood_saved = models.BooleanField(null=True, default=None)
 
 
+class OTPRequest(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    phone_number = models.CharField(max_length=15)
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_verified = models.BooleanField(default=False)
 
+    def generate_otp(self):
+        self.otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+        self.save()
+        return self.otp
 
