@@ -26,4 +26,5 @@ urlpatterns = [
     path('request-otp/', request_otp, name='request_otp'),
     path('verify-otp/', verify_otp, name='verify_otp'),
     path('reset-password/', reset_password, name='reset_password'),
+    path('user_password_update/', user_password_update, name='user_password_update'),
 ]

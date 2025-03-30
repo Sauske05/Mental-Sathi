@@ -772,7 +772,9 @@ def fetch_sentimentScore(request):
             return JsonResponse(data_sentiment_score, safe=False)
 
         user_email = request.session.get('user_id')
+        print(f'User Email test in Django {user_email}')
         user = CustomUser.objects.get(email=user_email)
+        print(f'Custom User Object Test in Django {user}')
         # data_sentiment_score = list(SentimentDB.objects.filter(user_name = user).values_list('sentiment_score', 'date_time'))
         data_sentiment_score = list(SentimentDB.objects.filter(
             Q(user_name=user) & Q(date_time__gte=datetime.today().date() - timedelta(7))).values_list('sentiment_score',

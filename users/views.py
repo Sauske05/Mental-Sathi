@@ -1,4 +1,4 @@
-from typing import re
+import json
 
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -27,6 +27,30 @@ from sentiment_analysis.models import SentimentModel
 
 NEPAL_TZ = pytz.timezone('Asia/Kathmandu')
 
+def dashboard_update(user:CustomUser):
+    dashboard_detail = DashboardRecords.objects.get(user_name=user)
+    current_time = datetime.now(NEPAL_TZ)
+
+    current_date = current_time.date()
+    last_login_date = dashboard_detail.last_login_date
+    # print(f'Current Date: {current_date}')
+    # print(f'Last Login Date: {last_login_date}')
+    if not last_login_date:
+        dashboard_detail.login_streak = 1
+        dashboard_detail.number_of_login_days = 1
+    if last_login_date:
+        last_login_date = last_login_date.date()
+        if last_login_date == current_date:
+            pass
+        elif last_login_date == current_date - timedelta(days=1):
+            dashboard_detail.login_streak += 1
+            dashboard_detail.number_of_login_days += 1
+        else:
+            dashboard_detail.login_streak = 0
+            dashboard_detail.number_of_login_days += 1
+    dashboard_detail.last_login_date = current_date
+
+    dashboard_detail.save()
 
 def login_view(request):
     if request.method == "POST":
@@ -40,80 +64,44 @@ def login_view(request):
             try:
                 # Check if user exists
                 user = CustomUser.objects.get(email=email)
-                dashboard_detail = DashboardRecords.objects.get(user_name=user)
+                #dashboard_detail = DashboardRecords.objects.get(user_name=user)
                 print(f'The email test: {user.email}')
                 # Check password
                 if check_password(password, user.password):
                     # Start session
                     request.session['user_id'] = user.email
                     # Updating the dashboard
-                    current_time = datetime.now(NEPAL_TZ)
-
-                    current_date = current_time.date()
-                    last_login_date = dashboard_detail.last_login_date
-                    # print(f'Current Date: {current_date}')
-                    # print(f'Last Login Date: {last_login_date}')
-                    if not last_login_date:
-                        dashboard_detail.login_streak = 1
-                        dashboard_detail.number_of_login_days = 1
-                    if last_login_date:
-                        last_login_date = last_login_date.date()
-                        if last_login_date == current_date:
-                            pass
-                        elif last_login_date == current_date - timedelta(days=1):
-                            dashboard_detail.login_streak += 1
-                            dashboard_detail.number_of_login_days += 1
-                        else:
-                            dashboard_detail.login_streak = 0
-                            dashboard_detail.number_of_login_days += 1
-                    dashboard_detail.last_login_date = current_date
-
-                    dashboard_detail.save()
+                    # current_time = datetime.now(NEPAL_TZ)
+                    #
+                    # current_date = current_time.date()
+                    # last_login_date = dashboard_detail.last_login_date
+                    # # print(f'Current Date: {current_date}')
+                    # # print(f'Last Login Date: {last_login_date}')
+                    # if not last_login_date:
+                    #     dashboard_detail.login_streak = 1
+                    #     dashboard_detail.number_of_login_days = 1
+                    # if last_login_date:
+                    #     last_login_date = last_login_date.date()
+                    #     if last_login_date == current_date:
+                    #         pass
+                    #     elif last_login_date == current_date - timedelta(days=1):
+                    #         dashboard_detail.login_streak += 1
+                    #         dashboard_detail.number_of_login_days += 1
+                    #     else:
+                    #         dashboard_detail.login_streak = 0
+                    #         dashboard_detail.number_of_login_days += 1
+                    # dashboard_detail.last_login_date = current_date
+                    #
+                    # dashboard_detail.save()
                     # messages.success(request, "Login successful!")
+                    dashboard_update(user)
                     return redirect(user_dashboard, )  # Redirect to your homepage URL name
                 else:
                     messages.error(request, "Invalid password.")
             except CustomUser.DoesNotExist:
                 messages.error(request, "User does not exist.")
-
-    # if isinstance(request.user, CustomUser):
-    #     print(request.user)
-    #     user_obj = request.user
-    #     try:
-    #         # Check if user exists
-    #         user = CustomUser.objects.get(email=user_obj.email)
-    #         print(f'User Object Check: {user}')
-    #         dashboard_detail = DashboardRecords.objects.get(user_name=user)
-    #         print(f'The email test: {user.email}')
-    #         request.session['user_id'] = user.email
-    #         # Updating the dashboard
-    #         current_time = datetime.now(NEPAL_TZ)
-    #
-    #         current_date = current_time.date()
-    #         last_login_date = dashboard_detail.last_login_date
-    #
-    #         if not last_login_date:
-    #             dashboard_detail.login_streak = 1
-    #             dashboard_detail.number_of_login_days = 1
-    #         if last_login_date:
-    #             last_login_date = last_login_date.date()
-    #             if last_login_date == current_date:
-    #                 pass
-    #             elif last_login_date == current_date - timedelta(days=1):
-    #                 dashboard_detail.login_streak += 1
-    #                 dashboard_detail.number_of_login_days += 1
-    #             else:
-    #                 dashboard_detail.login_streak = 0
-    #                 dashboard_detail.number_of_login_days += 1
-    #         dashboard_detail.last_login_date = current_date
-    #
-    #         dashboard_detail.save()
-    #         # messages.success(request, "Login successful!")
-    #     except CustomUser.DoesNotExist:
-    #         messages.error(request, "User does not exist.")
-    #     return redirect(user_dashboard, )
-
-    # return render(request, 'users/Login_page.html', {'form': form})
+        else:
+            messages.error(request, "Form not valid!.")
     return render(request, 'user_template/Login_page.html')
 
 
@@ -271,9 +259,13 @@ def admin_tables(request):
 
 def user_dashboard(request):
     user_email = request.session.get('user_id')
+    if user_email is None:
+        messages.error(request, 'You are not logged in.')
+        return redirect(login_view, )
     user = CustomUser.objects.get(email=user_email)
-    print(user)
-    print('Here')
+    #print(user)
+    #print('Here')
+    dashboard_update(user)
     user_details = DashboardRecords.objects.get(user_name=user)
     return render(request, 'user_template/index.html', {'user_details': user_details})
 
@@ -407,32 +399,39 @@ def upload_profile_picture(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"})
 
-
 @csrf_exempt
 def user_password_update(request):
+    print('Enters')
     if request.method == 'POST':
+        print('POST')
         try:
+
             user_email = request.session.get('user_id')
             user = CustomUser.objects.get(email=user_email)
             current_password = request.POST.get('currentPassword')
             new_password = request.POST.get('newPassword')
             re_password = request.POST.get('confirmPassword')
-
+            print(user)
+            print(current_password)
+            print(new_password)
+            print(re_password)
             if check_password(current_password, user.password):
-                pass
+                print('Passwords match')
             else:
+                print('Test here wtf??')
                 message = 'The password you entered is incorrect.'
-                return JsonResponse({'message': message}, status=401)
+                return JsonResponse({'message': message})
 
             if new_password != re_password:
                 message_2 = "The new password doesn't match."
-                return JsonResponse({'message' : message_2}, status=401)
+                return JsonResponse({'message' : message_2})
 
             user.password = new_password
             user.save()
+            print('Final')
             return JsonResponse({'success': True, 'message': 'Password updated successfully'})
         except CustomUser.DoesNotExist as e:
-            return JsonResponse({'message': str(e)}, status=500)
+            return JsonResponse({'message': str(e)})
 
 
 # views.py
