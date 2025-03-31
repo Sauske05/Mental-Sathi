@@ -284,18 +284,21 @@ def admin_tables(request):
         last_logged_in=Max('dashboardrecords__last_login_date'))
     return render(request, 'admin/tables.html', {'all_user_info_table': user_records})
 
-
+from .models import UserProfile
 def user_dashboard(request):
     user_email = request.session.get('user_id')
     if user_email is None:
         messages.error(request, 'You are not logged in.')
         return redirect(login_view, )
     user = CustomUser.objects.get(email=user_email)
+    user_name = user.first_name
+    user_profile = UserProfile.objects.get(user_email=user_email)
     #print(user)
     #print('Here')
     dashboard_update(user)
     user_details = DashboardRecords.objects.get(user_name=user)
-    return render(request, 'user_template/index.html', {'user_details': user_details})
+    user_image_path = user_profile.profile_picture
+    return render(request, 'user_template/index.html', {'user_details': user_details, 'user_first_name': user_name, 'user_image_path': user_image_path})
 
 
 def user_profile(request):
