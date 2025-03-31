@@ -1,6 +1,44 @@
 
+async function getSentimentScore(duration) {
+    try {
+        const user_email_fetch = await fetch('/get_session/', {
+            method: 'GET'
+        });
+
+        let user_email = await user_email_fetch.json()
+        const url = '/sentiment/fetch_sentimentScore/'
+
+        const response = await fetch(url, {
+            method : "POST",
+            body :
+            JSON.stringify({'duration' : duration,
+            headers : {
+                'Content-Type' : 'application/json'
+            }
+        })
+    })
+    console.log(response)
+     if (!response.ok) {
+            throw new Error(`Response status: ${response.status}`);
+        }
+
+        const json = await response.json()
+        console.log(`This is the json data ${json}`)
+        return json;
+    } catch (Exception) {
+        console.log(Exception);
+        return null;
+    }
+
+}
+
 document.addEventListener('DOMContentLoaded', async function () {
 // Pie Chart Example
+    const sentiment_data_weekly = await getSentimentScore('weekly');
+    const sentiment_data_monthly = await getSentimentScore('monthly')
+    console.log(`This is the final weekly sentiment data : ${sentiment_data_weekly}`)
+    console.log(`This is the final monthly sentiment data : ${sentiment_data_monthly}`)
+
 let ctx = document.getElementById("myPieChart");
 let myPieChart = new Chart(ctx, {
     type: 'doughnut',

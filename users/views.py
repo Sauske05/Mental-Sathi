@@ -1,5 +1,7 @@
 import json
+import statistics
 
+from Tools.scripts.summarize_stats import emit_table
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db.models import Avg, Max
@@ -128,11 +130,37 @@ def homepage(request):
         return render(request, 'homepage.html', {'user_id': user_id, 'session': request.session})
     return redirect('login')
 
-
+#from datetime import timedelta
+from sentiment_analysis.views import fetch_bar_sentiment_data
 def admin_dashboard(request):
     user_records = CustomUser.objects.annotate(avg_sentiment=Avg('sentimentmodel__sentiment_score')).annotate(
         last_logged_in=Max('dashboardrecords__last_login_date'))
-    return render(request, 'admin/index_.html', {'all_user_info_table': user_records})
+    user_count:int = len(user_records)
+    active_users:int = 0
+    #print('Test: ', list(user_records.values_list('avg_sentiment', flat=True),))
+    average_sentiment_score:float = statistics.mean(list(user_records.values_list('avg_sentiment', flat=True)))
+    #print(f'Average sentiment metric of the admin dashboard: {average_sentiment_score}')
+    for user in user_records.values():
+        if user['last_logged_in'] > now() - timedelta(days=7):
+            active_users += 1
+
+    bar_sentiment_data = json.loads(fetch_bar_sentiment_data(request).content)
+    emotion_map:dict = {}
+    for data in bar_sentiment_data:
+        if data['sentiment_data'] not in emotion_map:
+            emotion_map[data['sentiment_data']] = 1
+        else:
+            emotion_map[data['sentiment_data']] += 1
+    print("Emotion map:", emotion_map)
+    #most_common_emotion = emotion_map[max(emotion_map, key=emotion_map.get)]
+    max_value = max(emotion_map.values());
+    #The most common emotion is fetched wrt all time data.
+    most_common_emotion = [key for key, value in emotion_map.items() if value == max_value]
+    print('Most Common Emotion: ', most_common_emotion[0])
+    #print('Common Emotion Check: ',bar_sentiment_data)
+    return render(request, 'admin/index_.html', {'all_user_info_table': user_records,'user_count':
+        user_count, 'active_users': active_users, 'average_sentiment_score': average_sentiment_score,
+                                                'most_common_emotion': most_common_emotion[0]})
 
 
 def signup_authentication(func):

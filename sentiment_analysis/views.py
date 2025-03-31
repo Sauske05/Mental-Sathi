@@ -83,7 +83,17 @@ def fetch_bar_sentiment_data(request):
             if duration == 'all_time':
                 sentiment_obj = SentimentDB.objects.all()
             serializer = SentimentSerializer(sentiment_obj, many=True)
-            print(f'This is the serialized data: {JsonResponse(serializer.data, safe=False)}')
+            #print(f'This is the serialized data: {JsonResponse(serializer.data, safe=False)}')
+            return JsonResponse(serializer.data, safe=False)
+        except SentimentDB.DoesNotExist:
+            return HttpResponse(status=404)
+        except Exception as e:
+            return e
+    if request.method == "GET":
+        try:
+            sentiment_obj = SentimentDB.objects.all()
+            serializer = SentimentSerializer(sentiment_obj, many=True)
+            # print(f'This is the serialized data: {JsonResponse(serializer.data, safe=False)}')
             return JsonResponse(serializer.data, safe=False)
         except SentimentDB.DoesNotExist:
             return HttpResponse(status=404)
