@@ -1,5 +1,4 @@
 {% load static %}
-{% load socialaccount %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,7 +12,7 @@
     <form method = 'post' action="{% url 'signup' %}">
         {% csrf_token %}
         <div class="sign-up">
-            <h1 class="heading">Welcome, User!</h1>
+            <h1 class="heading">Welcome, User 1!</h1>
 
             <div class="text">
                 <img src="https://i.postimg.cc/1zgS8WTF/user.png" alt="icon" height="20">
@@ -48,7 +47,7 @@
                 <p class="conditions">I read and agree to <a href="#">terms & conditions</a></p>
             </div>
 
-            <button type="submit">CREATE ACCOUNT</button>
+            <button type="submit" onclick="this.disabled=true; this.form.submit();">CREATE ACCOUNT</button>
 {#            <a href="{% provider_login_url 'google' %}">Signup with Google</a>#}
             {{ message }}
             <p class="conditions">Already have an account? <a href="{% url 'login' %}">Sign in</a></p>

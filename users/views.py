@@ -162,70 +162,102 @@ def admin_dashboard(request):
         user_count, 'active_users': active_users, 'average_sentiment_score': average_sentiment_score,
                                                 'most_common_emotion': most_common_emotion[0]})
 
+#
+# def signup_authentication(func):
+#     @wraps(func)
+#     def wrapper(request, **kwargs):
+#         if request.method == 'POST':
+#             first_name = request.POST.get('first_name')
+#             last_name = request.POST.get('last_name')
+#             email = request.POST.get('email')
+#             password = request.POST.get('password')
+#             retype_password = request.POST.get('re_password')
+#             agree_terms = request.POST.get('terms_checkbox')
+#             phone_number = request.POST.get('phone_number')
+#             # Validation checks
+#             if not first_name or not last_name or not email or not password or not retype_password:
+#                 message = 'All fields are required'
+#                 # messages.error(request, "All fields are required.")
+#                 return render(request, 'user_template/SignUp.html', {'message': message})
+#
+#             # if len(password) < 8:
+#             #     message = "Password must be at least 8 characters long."
+#             #     return render(request, 'users/SignUp.html',{'message': message})
+#
+#             if password != retype_password:
+#                 message = "Passwords do not match."
+#                 return render(request, 'user_template/SignUp.html', {'message': message})
+#
+#             # if CustomUser.objects.filter(user_name=name).exists():
+#             #     message = "User already exists."
+#             #     return render(request, 'user_template/SignUp.html', {'message': message})
+#
+#             if CustomUser.objects.filter(email=email).exists():
+#                 message = "Email is already in use."
+#                 return render(request, 'user_template/SignUp.html', {'message': message})
+#
+#             # Terms and conditions checkbox validation
+#             if not agree_terms:
+#                 message = "You must agree to the terms and conditions."
+#                 return render(request, 'user_template/SignUp.html', {'message': message})
+#
+#             request.clean_data = {
+#                 'first_name': first_name,
+#                 'last_name': last_name,
+#                 'email': email,
+#                 'password': password,
+#                 'phone_number': phone_number,
+#             }
+#         return func(request, **kwargs)
+#
+#     return wrapper
 
-def signup_authentication(func):
-    @wraps(func)
-    def wrapper(request, **kwargs):
-        if request.method == 'POST':
-            first_name = request.POST.get('first_name')
-            last_name = request.POST.get('last_name')
-            email = request.POST.get('email')
-            password = request.POST.get('password')
-            retype_password = request.POST.get('re_password')
-            agree_terms = request.POST.get('terms_checkbox')
-            phone_number = request.POST.get('phone_number')
-            # Validation checks
-            if not first_name or not last_name or not email or not password or not retype_password:
-                message = 'All fields are required'
-                # messages.error(request, "All fields are required.")
-                return render(request, 'user_template/SignUp.html', {'message': message})
 
-            # if len(password) < 8:
-            #     message = "Password must be at least 8 characters long."
-            #     return render(request, 'users/SignUp.html',{'message': message})
-
-            if password != retype_password:
-                message = "Passwords do not match."
-                return render(request, 'user_template/SignUp.html', {'message': message})
-
-            # if CustomUser.objects.filter(user_name=name).exists():
-            #     message = "User already exists."
-            #     return render(request, 'user_template/SignUp.html', {'message': message})
-
-            if CustomUser.objects.filter(email=email).exists():
-                message = "Email is already in use."
-                return render(request, 'user_template/SignUp.html', {'message': message})
-
-            # Terms and conditions checkbox validation
-            if not agree_terms:
-                message = "You must agree to the terms and conditions."
-                return render(request, 'user_template/SignUp.html', {'message': message})
-
-            request.clean_data = {
-                'first_name': first_name,
-                'last_name': last_name,
-                'email': email,
-                'password': password,
-                'phone_number': phone_number,
-            }
-        return func(request, **kwargs)
-
-    return wrapper
-
-
-@signup_authentication
 def signup(request):
     if request.method == 'POST':
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        retype_password = request.POST.get('re_password')
+        agree_terms = request.POST.get('terms_checkbox')
+        phone_number = request.POST.get('phone_number')
+        print('Reaches here!')
+        # Validation checks
+        if not first_name or not last_name or not email or not password or not retype_password:
+            message = 'All fields are required'
+            # messages.error(request, "All fields are required.")
+            return render(request, 'user_template/SignUp.html', {'message': message})
+
+        # if len(password) < 8:
+        #     message = "Password must be at least 8 characters long."
+        #     return render(request, 'users/SignUp.html',{'message': message})
+
+        if password != retype_password:
+            message = "Passwords do not match."
+            return render(request, 'user_template/SignUp.html', {'message': message})
+
+        # if CustomUser.objects.filter(user_name=name).exists():
+        #     message = "User already exists."
+        #     return render(request, 'user_template/SignUp.html', {'message': message})
+
+        if CustomUser.objects.filter(email=email).exists():
+            message = "Email is already in use."
+            return render(request, 'user_template/SignUp.html', {'message': message})
+
+        # Terms and conditions checkbox validation
+        if not agree_terms:
+            message = "You must agree to the terms and conditions."
+            return render(request, 'user_template/SignUp.html', {'message': message})
         try:
-            user_data = request.clean_data
             # print(f'This is the user_data {user_data.get("name")}')
             # #print(f'user_data {user_data.keys()}')
             with transaction.atomic():
-                user = CustomUser(first_name=user_data.get("first_name"), last_name=user_data.get("last_name"),
-                                  password=user_data.get("password"), email=user_data.get("email"), phone_number=user_data.get("phone_number"))
+                user = CustomUser(first_name=first_name, last_name=last_name,
+                                  password=password, email=email, phone_number=phone_number)
                 user.save()
                 # User = get_user_model()
-                user_filter = CustomUser.objects.get(email=user_data.get("email"))
+                user_filter = CustomUser.objects.get(email=email)
                 print(user_filter)
                 dashboard_init = DashboardRecords(user_name=user_filter, login_streak=0, number_of_login_days=0,
                                                   positive_streak=0)
@@ -234,12 +266,13 @@ def signup(request):
                 user_profile_init = UserProfile(user_email=user_filter, first_name=user_filter.first_name, last_name = user_filter.last_name)
                 user_profile_init.save()
             messages.success(request, "Account created successfully! Please log in.")
-            return render(request, 'user_template/Login_page.html')
+            print(">>> Reached point of redirection to login page.")
+            return redirect('login')
         except Exception as e:
             message = f"An error occurred: {str(e)}"
             return render(request, 'user_template/SignUp.html', {'message': message})
-
-    return render(request, 'user_template/SignUp.html', {'message': ''})
+    else:
+        return render(request, 'user_template/SignUp.html', {'message': ''})
 
 
 def buttons(request):

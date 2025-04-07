@@ -229,6 +229,41 @@
         //const confirmPasswordText = document.getElementById('confirmPassword');
 
         const passwordChangeBtn = document.getElementById('changePasswordBtn')
+        passwordChangeBtn.addEventListener('click', async (event) => {
+            console.log('Button clicked:', Date.now());
+            //console.log('Click event listener fired by:', event.target);
+            event.preventDefault();// Prevent default form submission
+            const passwordFormData = new FormData(changePasswordForm);
+
+            //passwordFormData.forEach((value, key) => console.log(key, value)); // Debug
+
+            try {
+                const response = await fetch('/user/user_password_update/', {
+                    method: 'POST',
+                    body: passwordFormData,
+                    headers: {
+                        'X-CSRFToken': getCSRFToken() // Fixed typo
+                    },
+                    credentials: 'same-origin'
+                });
+                console.log(response);
+                //if (!response.ok) {
+                //    throw new Error('Network Error During Password Change');
+                //}
+                let response_data = await response.json();
+                console.log(response_data);
+                if (response.status === 200) {
+                    showPopup(response_data.message);
+                } else {
+                    showPopup('Error: ' + (response_data.message || 'Password update failed'));
+                }
+            } catch (e) {
+                console.error('Error:', e);
+                showPopup('An error occurred while updating the password');
+            }
+        });
+
+
         const changePasswordForm = document.getElementById('passwordForm')
         //Pop up Message Display while updating profile!
         const updateButton = document.getElementById("saveProfileBtn")
@@ -269,38 +304,6 @@
             }
         });
 
-        passwordChangeBtn.addEventListener('click', async (event) => {
-            //console.log('Click event listener fired by:', event.target);
-            event.preventDefault(); // Prevent default form submission
-            const passwordFormData = new FormData(changePasswordForm);
-
-            //passwordFormData.forEach((value, key) => console.log(key, value)); // Debug
-
-            try {
-                const response = await fetch('/user/user_password_update/', {
-                    method: 'POST',
-                    body: passwordFormData,
-                    headers: {
-                        'X-CSRFToken': getCSRFToken() // Fixed typo
-                    },
-                    credentials: 'same-origin'
-                });
-                console.log(response);
-                //if (!response.ok) {
-                //    throw new Error('Network Error During Password Change');
-                //}
-                let response_data = await response.json();
-                console.log(response_data);
-                if (response.status === 200) {
-                    showPopup(response_data.message);
-                } else {
-                    showPopup('Error: ' + (response_data.message || 'Password update failed'));
-                }
-            } catch (e) {
-                console.error('Error:', e);
-                showPopup('An error occurred while updating the password');
-            }
-        });
 
         updateButton.addEventListener('click', async (e) => {
             e.preventDefault(); // Prevent default form submission
