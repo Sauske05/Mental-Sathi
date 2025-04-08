@@ -134,11 +134,12 @@ def homepage(request):
 from sentiment_analysis.views import fetch_bar_sentiment_data
 def admin_dashboard(request):
     user_records = CustomUser.objects.annotate(avg_sentiment=Avg('sentimentmodel__sentiment_score')).annotate(
-        last_logged_in=Max('dashboardrecords__last_login_date'))
+        last_logged_in=Max('dashboardrecords__last_login_date')).filter(last_logged_in__isnull=False)
+
     user_count:int = len(user_records)
     active_users:int = 0
-    #print('Test: ', list(user_records.values_list('avg_sentiment', flat=True),))
-    average_sentiment_score:float = statistics.mean(list(user_records.values_list('avg_sentiment', flat=True)))
+    print('Test Admin Dashboard Issue: ', [x for x in list(user_records.values_list('avg_sentiment', flat=True),) if x is not None])
+    average_sentiment_score:float = statistics.mean([x for x in list(user_records.values_list('avg_sentiment', flat=True)) if x is not None])
     #print(f'Average sentiment metric of the admin dashboard: {average_sentiment_score}')
     for user in user_records.values():
         if user['last_logged_in'] > now() - timedelta(days=7):
