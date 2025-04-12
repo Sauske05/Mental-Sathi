@@ -151,6 +151,7 @@ async def bert_inference(input_text, bert_model):
     model_pred = bert_model(input_ids, input_attn_mask)
     model_idx = torch.argmax(model_pred[0]).item()  # torch.argmax(model_pred.squeeze())
     if model_idx in label_dict.keys():
+        print(f'Users predicted sentiment :{label_dict[model_idx]}')
         return label_dict[model_idx]
 
 
@@ -218,6 +219,7 @@ async def sentiment_process(request):
             feelings_text = data.get("feelingsText")
             emotion = data.get("selectedEmotion")
             bert_model = SentimentAnalysisConfig.bert_model
+            print(f'Users feeling text : {feelings_text}')
             bert_analysis = await bert_inference(feelings_text, bert_model)
 
             sentiment_id = await process_initial_data(request, feelings_text, emotion, bert_analysis)
@@ -778,13 +780,13 @@ def fetch_sentimentScore(request):
                         'sentiment_score', 'date_time'))
                 case 'all_time':
                     data_sentiment_score = list(SentimentDB.objects.all().values_list('sentiment_score', 'date_time'))
-
+            #print(f'This is the data sentiment score : {data_sentiment_score}')
             return JsonResponse(data_sentiment_score, safe=False)
 
         user_email = request.session.get('user_id')
-        print(f'User Email test in Django {user_email}')
+        #print(f'User Email test in Django {user_email}')
         user = CustomUser.objects.get(email=user_email)
-        print(f'Custom User Object Test in Django {user}')
+        #print(f'Custom User Object Test in Django {user}')
         # data_sentiment_score = list(SentimentDB.objects.filter(user_name = user).values_list('sentiment_score', 'date_time'))
         data_sentiment_score = list(SentimentDB.objects.filter(
             Q(user_name=user) & Q(date_time__gte=datetime.today().date() - timedelta(7))).values_list('sentiment_score',
