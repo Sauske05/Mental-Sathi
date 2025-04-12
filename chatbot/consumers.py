@@ -84,7 +84,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             print(f'The user id while streaming chatbot response : {user_email}')
             async def stream_llm_response():
                 url = 'http://localhost:2001/chatbot'
-                timeout = httpx.Timeout(120.0)
+                timeout = httpx.Timeout(1000.0)
 
                 async with httpx.AsyncClient(timeout=timeout) as client:
                     assistant_response = ''

@@ -134,7 +134,10 @@ def fetch_admin_table_data(request):
 
 
 def sentiment_page(request):
-    return render(request, 'sentiment_tracker.html')
+    user_email = request.session.get('user_id')
+    user = CustomUser.objects.get(email=user_email)
+    user_name = user.first_name
+    return render(request, 'sentiment_tracker.html', {'user_first_name': user_name})
 
 
 async def bert_inference(input_text, bert_model):
@@ -766,14 +769,27 @@ def makeMarker(name):
 @csrf_exempt
 def fetch_sentimentScore(request):
     if request.method == 'POST':
-        duration = request.POST.get('duration')
-        if request.POST.get('type') == 'all_users':
+        # print(f'This is triggered before any error type shit!')
+        # duration = request.POST.get('duration')
+        # print(f'The duration: {request.POST.get("duration")}')
+        # print(f'The type: {request.POST.get("type")}')
+        data = json.loads(request.body.decode('utf-8'))
+        duration = data.get('duration')
+        request_type = data.get('type')  # It's good practice to avoid shadowing built-in names like 'type'
+        print(f'The duration: {duration}')
+        print(f'The type: {request_type}')
+        if request_type == 'all_users':
+
             data_sentiment_score = None
             match duration:
                 case 'weekly':
+                    print(list(SentimentDB.objects.filter(
+                        Q(date_time__gte=datetime.today().date() - timedelta(7)))))
                     data_sentiment_score = list(SentimentDB.objects.filter(
                         Q(date_time__gte=datetime.today().date() - timedelta(7))).values_list(
                         'sentiment_score', 'date_time'))
+
+
                 case 'monthly':
                     data_sentiment_score = list(SentimentDB.objects.filter(
                         Q(date_time__gte=datetime.today().date() - timedelta(30))).values_list(

@@ -72,6 +72,8 @@ def login_view(request):
                 if check_password(password, user.password):
                     # Start session
                     request.session['user_id'] = user.email
+                    if user.is_staff:
+                        return redirect(admin_dashboard, )
                     # Updating the dashboard
                     # current_time = datetime.now(NEPAL_TZ)
                     #
@@ -276,41 +278,6 @@ def signup(request):
         return render(request, 'user_template/SignUp.html', {'message': ''})
 
 
-def buttons(request):
-    return render(request, 'admin/buttons.html')
-
-
-def card(request):
-    return render(request, 'admin/cards.html')
-
-
-def utilities_border(request):
-    return render(request, 'admin/utilities-border.html')
-
-
-def utilities_animation(request):
-    return render(request, 'admin/utilities-animation.html')
-
-
-def utilities_color(request):
-    return render(request, 'admin/utilities-color.html')
-
-
-def utilities_other(request):
-    return render(request, 'admin/utilities-other.html')
-
-
-def error_page(request):
-    return render(request, 'admin/404.html')
-
-
-def blank_page(request):
-    return render(request, 'admin/blank.html')
-
-
-def admin_charts(request):
-    return render(request, 'admin/charts.html')
-
 
 def admin_tables(request):
     # user_records = CustomUser.objects.all()
@@ -332,14 +299,17 @@ def user_dashboard(request):
     dashboard_update(user)
     user_details = DashboardRecords.objects.get(user_name=user)
     user_image_path = user_profile.profile_picture
-    return render(request, 'user_template/index.html', {'user_details': user_details, 'user_first_name': user_name, 'user_image_path': user_image_path})
+    print(f'This is the user image path : {user_image_path}')
+    return render(request, 'user_template/index.html', {'user_details': user_details,
+                                                        'user_first_name': user_name, 'user_image_path': user_image_path})
 
 
 def user_profile(request):
     user_email = request.session.get('user_id')
     user = CustomUser.objects.get(email=user_email)
+    user_name = user.first_name
     profile_data = UserProfile.objects.get(user_email=user)
-    return render(request, 'user_template/profile_test.html', {'profile_data': profile_data})
+    return render(request, 'user_template/profile_test.html', {'profile_data': profile_data, 'user_first_name': user_name})
 
 
 def user_charts(request):
