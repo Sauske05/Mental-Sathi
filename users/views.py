@@ -48,7 +48,7 @@ def dashboard_update(user:CustomUser):
             dashboard_detail.login_streak += 1
             dashboard_detail.number_of_login_days += 1
         else:
-            dashboard_detail.login_streak = 0
+            dashboard_detail.login_streak = 1
             dashboard_detail.number_of_login_days += 1
     dashboard_detail.last_login_date = current_date
 
@@ -286,6 +286,7 @@ def admin_tables(request):
     return render(request, 'admin/tables.html', {'all_user_info_table': user_records})
 
 from .models import UserProfile
+from sentiment_analysis.models import  SentimentModel
 def user_dashboard(request):
     user_email = request.session.get('user_id')
     if user_email is None:
@@ -298,10 +299,19 @@ def user_dashboard(request):
     #print('Here')
     dashboard_update(user)
     user_details = DashboardRecords.objects.get(user_name=user)
+
+    latest_sentiment_detail = SentimentModel.objects.filter(user_name=user).order_by('-date_time').first()
+
+    if latest_sentiment_detail:
+        latest_sentiment_score = latest_sentiment_detail.sentiment_score
+    else:
+        latest_sentiment_score = 0
+
     user_image_path = user_profile.profile_picture
     print(f'This is the user image path : {user_image_path}')
     return render(request, 'user_template/index.html', {'user_details': user_details,
-                                                        'user_first_name': user_name, 'user_image_path': user_image_path})
+                                                        'user_first_name': user_name, 'user_image_path': user_image_path,
+                                                        'latest_sentiment_score': latest_sentiment_score})
 
 
 def user_profile(request):
@@ -453,7 +463,6 @@ def user_password_update(request):
             if check_password(current_password, user.password):
                 print('Passwords match')
             else:
-                print('Test here wtf??')
                 message = 'The password you entered is incorrect.'
                 return JsonResponse({'message': message})
 
@@ -474,32 +483,43 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login
 from django.contrib.auth.models import User
 from .models import OTPRequest
-from .forms import PhoneNumberForm, OTPVerificationForm, PasswordResetForm
+from .forms import OTPVerificationForm, PasswordResetForm
 from .utils import send_otp_sms
 from django.contrib import messages
-
-
+from django.core.mail import send_mail
+from .forms import EmailForm
 def request_otp(request):
     if request.method == 'POST':
-
-        form = PhoneNumberForm(request.POST)
+        print('OTP Button Clicked')
+        form = EmailForm(request.POST)
         if form.is_valid():
-            phone_number = form.cleaned_data['phone_number']
+            email = form.cleaned_data['email']
             try:
                 #user = CustomUser.objects.get(profile__phone_number=phone_number)  # Assuming phone number is in profile
-                user_email = request.session.get('user_id')
-                user = CustomUser.objects.get(email=user_email)
-                otp_request = OTPRequest.objects.create(user=user, phone_number=phone_number)
+                #user_email = request.session.get('user_id')
+                print(email)
+                user = CustomUser.objects.get(email=email)
+                print(f'This is the user: {user}')
+                otp_request = OTPRequest.objects.create(user=user, email=email)
                 otp = otp_request.generate_otp()
-                send_otp_sms(phone_number, otp)
+                #send_otp_sms(phone_number, otp)
+                subject = 'Your OTP Code'
+                message = f'Your OTP code is {otp}. It is valid for 5 minutes.'
+                email_from = 'jarun6069@gmail.com'
+                recipient_list = [email]
+
+                send_mail(subject, message, email_from, recipient_list)
+                print('Email sent')
                 request.session['otp_request_id'] = otp_request.id
-                return redirect('verify_otp')
+                print(request.session['otp_request_id'])
+                return redirect(verify_otp)
             except CustomUser.DoesNotExist:
+                print('CustomUser does not exist')
                 messages.error(request, 'No user found with this phone number')
     else:
-        form = PhoneNumberForm()
-        user_phone = CustomUser.objects.filter(email=request.session.get('user_id')).values('phone_number')[0]
-        print(f'Users phone numbere: {user_phone}')
+        form = EmailForm()
+        #user_phone = CustomUser.objects.filter(email=request.session.get('user_id')).values('phone_number')[0]
+        #print(f'Users phone numbere: {user_phone}')
     return render(request, 'user_template/request_otp.html', {'form': form})
 
 

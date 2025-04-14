@@ -84,11 +84,11 @@ function updateLabelDict(jsonData) {
 async function initializePieChart(duration) {
     try {
         const sentimentScore = await fetchSentimentData(duration);
-        console.log("Sentiment score:", sentimentScore);
+        //console.log("Sentiment score:", sentimentScore);
         //Object.keys(labels_dict).forEach(key => labels_dict[key] = 0);
 
         let labels_dict = updateLabelDict(sentimentScore);
-        console.log('The pie button clicked!')
+        //console.log('The pie button clicked!')
         let ctx = document.getElementById("myPieChart");
         let myPieChart = new Chart(ctx, {
             type: 'doughnut',
@@ -129,7 +129,7 @@ async function initializePieChart(duration) {
 async function fetchSentimentData(duration) {
     try {
         const url = '/sentiment/fetch_bar_sentiment_data/';
-        console.log(`Fetching from URL: ${url}`);
+        //console.log(`Fetching from URL: ${url}`);
 
         const response = await fetch(url, {
             method: "POST",

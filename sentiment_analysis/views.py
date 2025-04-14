@@ -157,9 +157,10 @@ async def bert_inference(input_text, bert_model):
         print(f'Users predicted sentiment :{label_dict[model_idx]}')
         return label_dict[model_idx]
 
-
+from users.models import  DashboardRecords
 @sync_to_async
 def process_initial_data(request, feelings_text, emotion, bert_analysis):
+    print('Enters process initial data')
     try:
         score = {
             'Suicidal': -1.0,
@@ -175,6 +176,7 @@ def process_initial_data(request, feelings_text, emotion, bert_analysis):
             'Happy': 0.9
         }
         try:
+
             assert emotion in score.keys()
             if bert_analysis:
                 average_score = (score[emotion] + score[bert_analysis]) / 2
@@ -184,6 +186,8 @@ def process_initial_data(request, feelings_text, emotion, bert_analysis):
                 user_email_session = request.session['user_id']
                 print(f'This is the user_name -->>>{user_email_session}')
                 user_name = CustomUser.objects.get(email=user_email_session)
+                dashboard_records = DashboardRecords.objects.get(user_name=user_name)
+
                 sentiment_obj = SentimentDB(
                     user_name=user_name,
                     sentiment_data=emotion,
@@ -192,7 +196,13 @@ def process_initial_data(request, feelings_text, emotion, bert_analysis):
                     user_query=feelings_text,
                     query_sentiment=bert_analysis
                 )
+                print(f'This is the streak before update: {dashboard_records.positive_streak}')
+                dashboard_records.positive_streak = average_score
+                dashboard_records.save()
+                print(f'This is the streak after update: {dashboard_records.positive_streak}')
+
                 sentiment_obj.save()
+                print('Saved now!')
                 return sentiment_obj.id
         except AssertionError as e:
             print(e)
@@ -775,9 +785,9 @@ def fetch_sentimentScore(request):
         # print(f'The type: {request.POST.get("type")}')
         data = json.loads(request.body.decode('utf-8'))
         duration = data.get('duration')
-        request_type = data.get('type')  # It's good practice to avoid shadowing built-in names like 'type'
-        print(f'The duration: {duration}')
-        print(f'The type: {request_type}')
+        request_type = data.get('type')
+        #print(f'The duration: {duration}')
+        #print(f'The type: {request_type}')
         if request_type == 'all_users':
 
             data_sentiment_score = None

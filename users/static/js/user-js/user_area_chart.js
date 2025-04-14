@@ -35,7 +35,7 @@ async function getSentimentScore(duration) {
         })
 
         let user_email = await user_email_fetch.json()
-        console.log('The user email : ', user_email)
+        //console.log('The user email : ', user_email)
         const url = '/sentiment/fetch_sentimentScore/';
 
         const response = await fetch(url, {
@@ -53,12 +53,12 @@ async function getSentimentScore(duration) {
         }
 
         const json = await response.json()
-        console.log(`This is the json data ${json}`)
+        //console.log(`This is the json data ${json}`)
         return json;
 
 
     } catch (e) {
-        console.log(e)
+        //console.log(e)
         return null
     }
 }
@@ -88,8 +88,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         sentimentByDay[dayName] += sentimentScore;
     });
 
-    console.log(sentiment_data);
-    console.log(`This is the sentiment score ${sentimentByDay}`);
+    //console.log(sentiment_data);
+    //console.log(`This is the sentiment score ${sentimentByDay}`);
 
 // Get current day and reorder days to show last 7 days ending with today
     const today = new Date();

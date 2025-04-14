@@ -73,7 +73,7 @@ class DashboardRecords(models.Model):
 
 class OTPRequest(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    phone_number = models.CharField(max_length=15)
+    email = models.EmailField(max_length=40)
     otp = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
     is_verified = models.BooleanField(default=False)

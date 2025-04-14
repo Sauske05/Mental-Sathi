@@ -43,8 +43,8 @@ async function getSentimentData(duration) {
         // console.log(`This is the email -> ${user_email.userEmail}`)
         const url = `/sentiment/fetch_bar_sentiment_data/`;
 
-        console.log('Attempting to fetch URL:', url);
-        console.log('Full resolved URL will be:', window.location.pathname + url);
+       // console.log('Attempting to fetch URL:', url);
+        //console.log('Full resolved URL will be:', window.location.pathname + url);
         //const url = `sentiment/fetch_sentiment_data/arun`;
         //console.log(userName)
         try {
@@ -63,7 +63,7 @@ async function getSentimentData(duration) {
             }
 
             const json = await response.json();
-            console.log(json);
+            //console.log(json);
             return json;
         } catch (error) {
             console.error('Error fetching sentiment data:', error.message);
@@ -90,14 +90,14 @@ function updateEmotionDict(jsonData) {
 async function initializeDashboard(duration) {
     try {
         const sentimentData = await getSentimentData(duration)
-        console.log(sentimentData)
+        //console.log(sentimentData)
         Object.keys(emotions_dict).forEach(key => emotions_dict[key] = 0);
 
         updateEmotionDict(sentimentData);
-        console.log(emotions_dict)
+        //console.log(emotions_dict)
 
         let frequencies = Object.values(emotions_dict);
-        console.log(frequencies)
+        //console.log(frequencies)
         var myBarChart = new Chart(ctx, {
             type: 'bar',
             data: {

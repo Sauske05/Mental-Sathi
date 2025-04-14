@@ -31,21 +31,41 @@ async function getSentimentScore(duration) {
     }
 
 }
+async function intializePieChart(duration) {
+       let sentiment_map = {
+        'Happy' : 0,
+        'Sad' : 0,
+        'Neutral' : 0,
+    }
+    const sentiment_data = await getSentimentScore(duration);
+    //const sentiment_data_monthly = await getSentimentScore('monthly')
+    //console.log(`This is the final weekly sentiment data : ${sentiment_data_weekly}`)
+    //console.log(`This is the final monthly sentiment data : ${sentiment_data_monthly}`)
 
-document.addEventListener('DOMContentLoaded', async function () {
-// Pie Chart Example
-    const sentiment_data_weekly = await getSentimentScore('weekly');
-    const sentiment_data_monthly = await getSentimentScore('monthly')
-    console.log(`This is the final weekly sentiment data : ${sentiment_data_weekly}`)
-    console.log(`This is the final monthly sentiment data : ${sentiment_data_monthly}`)
 
+    sentiment_data.forEach(
+
+        item => {
+            const sentimentScore = item[0]
+            //console.log(`This is the sentiment score: ${sentimentScore}`)
+            if (sentimentScore > 0.3) {
+                sentiment_map['Happy'] +=1
+            }
+            else if (sentimentScore < 0.3 && sentimentScore > 0){
+                sentiment_map['Neutral'] +=1
+            }
+            else {
+                sentiment_map['Sad'] +=1
+            }
+        }
+    )
 let ctx = document.getElementById("myPieChart");
 let myPieChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
-        labels: ["Happy", "Sad", "Neutral"],
+        labels: Object.keys(sentiment_map),
         datasets: [{
-            data: [55, 30, 15],
+            data: Object.values(sentiment_map),
             backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc'],
             hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf'],
             hoverBorderColor: "rgba(234, 236, 244, 1)",
@@ -70,5 +90,13 @@ let myPieChart = new Chart(ctx, {
     },
 });
 
+}
 
+
+document.addEventListener('DOMContentLoaded', async function () {
+    await intializePieChart('weekly')
+
+    document.getElementById('pieChartWeeklyButton').addEventListener('click', async () => await intializePieChart('weekly'))
+
+    document.getElementById('pieChartMontlyButton').addEventListener('click', async () => await intializePieChart('monthly'))
 })

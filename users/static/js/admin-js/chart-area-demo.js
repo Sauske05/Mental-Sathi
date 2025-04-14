@@ -56,12 +56,12 @@ async function getSentimentScore(duration) {
         }
 
         const json = await response.json()
-        console.log(`This is the json data ${json}`)
+        //console.log(`This is the json data ${json}`)
         return json;
 
 
     } catch (e) {
-        console.log(e)
+        //console.log(e)
         return null
     }
 }
@@ -91,8 +91,8 @@ async function initializeAreaChart(duration) {
         sentimentByDay[dayName] += sentimentScore;
     });
 
-    console.log(sentiment_data);
-    console.log(`This is the sentiment score ${sentimentByDay}`);
+    //console.log(sentiment_data);
+    //console.log(`This is the sentiment score ${sentimentByDay}`);
 
 // Get current day and reorder days to show last 7 days ending with today
     const today = new Date();
@@ -114,7 +114,7 @@ async function initializeAreaChart(duration) {
     // Area Chart Example
     var ctx = document.getElementById("myAreaChart");
 
-    console.log('Area Chart buttons trigerred!')
+    //console.log('Area Chart buttons trigerred!')
     var myLineChart = new Chart(ctx, {
         type: 'line',
         data: {

@@ -6,8 +6,9 @@ class LoginForm(forms.Form):
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter password'}))
 
 
-class PhoneNumberForm(forms.Form):
-    phone_number = forms.CharField(max_length=15)
+class EmailForm(forms.Form):
+    email = forms.EmailField(
+        widget = forms.TextInput(attrs={'placeholder': 'Enter a valid Email Address'}))
 
 class OTPVerificationForm(forms.Form):
     otp = forms.CharField(max_length=6)

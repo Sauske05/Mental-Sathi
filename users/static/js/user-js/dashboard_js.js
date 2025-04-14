@@ -15,11 +15,11 @@ async function getSentimentData(duration) {
             method : "GET",
         })
        const user_email = await user_email_response.json()
-        console.log(`This is the email -> ${user_email.userEmail}`)
+        //.log(`This is the email -> ${user_email.userEmail}`)
         const url = `http://127.0.0.1:8000/sentiment/fetch_sentiment_data/${user_email.userEmail}`;
 
-        console.log('Attempting to fetch URL:', url);
-        console.log('Full resolved URL will be:', window.location.pathname + url);
+        //console.log('Attempting to fetch URL:', url);
+        //console.log('Full resolved URL will be:', window.location.pathname + url);
         //const url = `sentiment/fetch_sentiment_data/arun`;
         //console.log(userName)
         try {
@@ -38,7 +38,7 @@ async function getSentimentData(duration) {
             }
 
             const json = await response.json();
-            console.log(json);
+            //console.log(json);
             return json;
         } catch (error) {
             console.error('Error fetching sentiment data:', error.message);

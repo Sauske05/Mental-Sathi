@@ -5,10 +5,11 @@
     <title>Title</title>
 </head>
 <body>
-<!-- templates/request_otp.html -->
 <form method="post">
     {% csrf_token %}
-    {{ form.as_p }}
+    <div class="form-group">
+        {{ form }}
+    </div>
     <button type="submit">Send OTP</button>
 </form>
 </body>
