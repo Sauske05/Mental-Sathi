@@ -4,7 +4,9 @@ from asgiref.sync import async_to_sync, sync_to_async
 import httpx
 from django.contrib.sessions.models import Session
 from django.http import StreamingHttpResponse
-
+import os
+from dotenv import load_dotenv
+load_dotenv()
 from .models import Chat
 from ai_models.inference_chat import prompt
 import asyncio
@@ -83,7 +85,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             headers = {"Content-Type": "application/json"}
             print(f'The user id while streaming chatbot response : {user_email}')
             async def stream_llm_response():
-                url = 'http://localhost:2001/chatbot'
+                #url = 'http://localhost:2001/chatbot'
+                url = os.getenv("CHAT_URL")
                 timeout = httpx.Timeout(1000.0)
 
                 async with httpx.AsyncClient(timeout=timeout) as client:

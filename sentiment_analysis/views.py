@@ -7,11 +7,13 @@ import json
 from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import httpx
+import os
 import asyncio
 from django.db.models import Q, Avg
 # from .models import SentimentModel
 import statistics
-
+from dotenv import load_dotenv
+load_dotenv()
 from reportlab.lib.enums import TA_RIGHT, TA_CENTER
 
 from users.models import User, DashboardRecords
@@ -247,7 +249,8 @@ async def sentiment_process(request):
 
             # Create streaming response
             async def stream_llm_response():
-                url = 'http://localhost:2001/recommendation_analysis'
+                #url = 'http://localhost:2001/recommendation_analysis'
+                url = os.getenv("RECOMMENDATION_URL")
                 timeout = httpx.Timeout(120.0)
                 full_response = ''
                 async with httpx.AsyncClient(timeout=timeout) as client:

@@ -20,5 +20,5 @@ class SentimentAnalysisConfig(AppConfig):
 def load_bert():
     model = SentimentModel(config()['h'], config()['d_model'], config()['d_ff'], config()['labels'])
     model_path = os.path.join(BASE_DIR, 'sentiment_analysis', 'bert_model', 'model_state_dict.pth')
-    model.load_state_dict(torch.load(model_path, weights_only=True))
+    model.load_state_dict(torch.load(model_path, weights_only=True, map_location=torch.device('cpu')))
     return model
