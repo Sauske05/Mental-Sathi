@@ -129,7 +129,7 @@ async function initializePieChart(duration) {
 async function fetchSentimentData(duration) {
     try {
         const url = '/sentiment/fetch_bar_sentiment_data/';
-        //console.log(`Fetching from URL: ${url}`);
+        console.log(`Fetching from URL: ${url}`);
 
         const response = await fetch(url, {
             method: "POST",

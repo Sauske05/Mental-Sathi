@@ -56,12 +56,12 @@ async function getSentimentScore(duration) {
         }
 
         const json = await response.json()
-        //console.log(`This is the json data ${json}`)
+        console.log(`This is the json data ${json}`)
         return json;
 
 
     } catch (e) {
-        //console.log(e)
+        console.log(e)
         return null
     }
 }

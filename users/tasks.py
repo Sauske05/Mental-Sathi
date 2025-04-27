@@ -23,6 +23,8 @@ def send_scheduled_email():
 
     # Generate the PDF report
     for email in recipient_list:
+        if email == 'admin@mentalsathi.com.np':
+            continue
         pdf_content = report_generator(email)
 
         # Create a temporary file to store the generated PDF
