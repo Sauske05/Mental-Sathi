@@ -249,8 +249,8 @@ async def sentiment_process(request):
 
             # Create streaming response
             async def stream_llm_response():
-                #url = 'http://localhost:2001/recommendation_analysis'
-                url = os.getenv("RECOMMENDATION_URL")
+                url = 'http://localhost:2001/recommendation_analysis'
+                #url = os.getenv("RECOMMENDATION_URL")
                 timeout = httpx.Timeout(120.0)
                 full_response = ''
                 async with httpx.AsyncClient(timeout=timeout) as client:

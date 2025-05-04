@@ -16,7 +16,7 @@ import requests
 class ChatConsumer(AsyncWebsocketConsumer):
     def __init__(self):
         super().__init__()
-        self.url = "http://localhost:8080/chatbot"
+        #self.url = "http://localhost:8080/chatbot"
 
     async def connect(self):
         print(self.scope)
@@ -78,44 +78,84 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "is_complete": event.get("is_complete", False)
         }))
 
+    # async def stream_chatbot_response(self, user_input):
+    #         #prompt_ = prompt(user_input)
+    #         user_email = self.scope['session']['user_id']
+    #         data = {"prompt": user_input, "user_id" : user_email}
+    #         headers = {"Content-Type": "application/json"}
+    #         print(f'The user id while streaming chatbot response : {user_email}')
+    #         async def stream_llm_response():
+    #             url = 'http://127.0.0.1:2001/chatbot'
+    #             #url = os.getenv("CHAT_URL")
+    #             timeout = httpx.Timeout(1000.0)
+    #
+    #             async with httpx.AsyncClient(timeout=timeout) as client:
+    #                 assistant_response = ''
+    #                 async with client.stream("POST", url, json=data, headers = headers) as response:
+    #                     #print(f'This is the response -> {response}')
+    #                     print(f'This is the response status > {response.status_code}')
+    #
+    #                     async for chunk in response.aiter_text():
+    #                         # Yield each chunk as it arrives
+    #                         print(chunk)
+    #                         assistant_response = assistant_response + chunk
+    #
+    #                         yield chunk
+    #                 if response.status_code == 200:
+    #                     await self.save_chat_message(user_input, assistant_response)
+    #                     print('Content Saved in the Database')
+    #
+    #
+    #         async for token in stream_llm_response():
+    #             #await self.send(text_data=token)
+    #             await self.channel_layer.group_send(
+    #                 self.room_group_name,
+    #                 {
+    #                     "type": "chat_message",
+    #                     "message_type": "bot",
+    #                     "content": token
+    #                 }
+    #             )
+    #             await asyncio.sleep(0.05)
+    #
+    #         # Return a streaming response to the frontend
+    #         #return StreamingHttpResponse(stream_llm_response(), content_type='text/plain')
+
     async def stream_chatbot_response(self, user_input):
-            #prompt_ = prompt(user_input)
-            user_email = self.scope['session']['user_id']
-            data = {"prompt": user_input, "user_id" : user_email}
-            headers = {"Content-Type": "application/json"}
-            print(f'The user id while streaming chatbot response : {user_email}')
-            async def stream_llm_response():
-                #url = 'http://localhost:2001/chatbot'
-                url = os.getenv("CHAT_URL")
-                timeout = httpx.Timeout(1000.0)
+        user_email = self.scope['session']['user_id']
+        data = {"prompt": user_input, "user_id": user_email}
+        headers = {"Content-Type": "application/json"}
+        print(f'The user id while streaming chatbot response: {user_email}')
+        url = 'http://localhost:2001/chatbot'
+        timeout = httpx.Timeout(1000.0)
 
-                async with httpx.AsyncClient(timeout=timeout) as client:
-                    assistant_response = ''
-                    async with client.stream("POST", url, json=data, headers = headers) as response:
-                        #print(f'This is the response -> {response}')
-                        print(f'This is the response status > {response.status_code}')
-
-                        async for chunk in response.aiter_text():
-                            # Yield each chunk as it arrives
-                            print(chunk)
-                            assistant_response = assistant_response + chunk
-                            yield chunk
-                    if response.status_code == 200:
-                        await self.save_chat_message(user_input, assistant_response)
-                        print('Content Saved in the Database')
-
-
-            async for token in stream_llm_response():
-                #await self.send(text_data=token)
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            assistant_response = []
+            async with client.stream("POST", url, json=data, headers=headers) as response:
+                print(f'This is the response status > {response.status_code}')
+                async for chunk in response.aiter_text():
+                    print(chunk)
+                    assistant_response.append(chunk)
+                    # Send the chunk to the WebSocket group
+                    # await self.channel_layer.group_send(
+                    #     self.room_group_name,
+                    #     {
+                    #         "type": "chat_message",
+                    #         "message_type": "bot",
+                    #         "content": chunk
+                    #     }
+                    # )
+                    # Small delay to control streaming rate (optional)
+                    #await asyncio.sleep(0.05)
+            if response.status_code == 200:
+                full_response = ''.join(assistant_response)
                 await self.channel_layer.group_send(
                     self.room_group_name,
                     {
                         "type": "chat_message",
                         "message_type": "bot",
-                        "content": token
+                        "content": full_response
                     }
                 )
-                await asyncio.sleep(0.05)
-
-            # Return a streaming response to the frontend
-            #return StreamingHttpResponse(stream_llm_response(), content_type='text/plain')
+                await self.save_chat_message(user_input, full_response)
+                print('Content Saved in the Database')

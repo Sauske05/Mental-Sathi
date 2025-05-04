@@ -1,7 +1,7 @@
 import json
 import statistics
 
-from Tools.scripts.summarize_stats import emit_table
+#from Tools.scripts.summarize_stats import emit_table
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db.models import Avg, Max
