@@ -103,6 +103,10 @@ document.addEventListener('DOMContentLoaded', async function () {
         const dayIndex = (currentDayIndex - 6 + i + 7) % 7;
         reorderedDays.push(dayNames[dayIndex]);
     }
+//     for (let i = 6; i >= 0; i--) {
+//     const dayIndex = (currentDayIndex - i + 7) % 7;
+//     reorderedDays.push(dayNames[dayIndex]);
+// }
 
 // Create corresponding array of sentiment values in the same order
     const reorderedSentimentData = reorderedDays.map(day => sentimentByDay[day]);

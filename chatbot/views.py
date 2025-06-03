@@ -20,11 +20,14 @@ def chat_redirect(request):
 
 
 def chat_room(request, room_name):
-    user_id = request.session['user_id']
-    user_obj = CustomUser.objects.get(email=user_id)
+    try:
+        user_id = request.session['user_id']
+        user_obj = CustomUser.objects.get(email=user_id)
 
-    user_name = UserProfile.objects.filter(user_email=user_obj).first().first_name if UserProfile.objects.filter(
-        user_email=user_obj).exists() else user_id
+        user_name = UserProfile.objects.filter(user_email=user_obj).first().first_name if UserProfile.objects.filter(
+            user_email=user_obj).exists() else user_id
 
-    return render(request, "chatbot/room.html", {"room_name": room_name, 'user_name': user_name,
-                                                 'user_first_name': user_name})
+        return render(request, "chatbot/room.html", {"room_name": room_name, 'user_name': user_name,
+                                                     'user_first_name': user_name})
+    except Exception as e:
+        return redirect('login')

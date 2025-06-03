@@ -1,9 +1,11 @@
 import json
 import statistics
-
+import re
+from django.core.exceptions import ValidationError
 #from Tools.scripts.summarize_stats import emit_table
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.core.validators import validate_email
 from django.db.models import Avg, Max
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
@@ -135,35 +137,42 @@ def homepage(request):
 #from datetime import timedelta
 from sentiment_analysis.views import fetch_bar_sentiment_data
 def admin_dashboard(request):
-    user_records = CustomUser.objects.annotate(avg_sentiment=Avg('sentimentmodel__sentiment_score')).annotate(
-        last_logged_in=Max('dashboardrecords__last_login_date')).filter(last_logged_in__isnull=False)
+    try:
+        user_id = request.session.get('user_id')
+        user = CustomUser.objects.get(email=user_id)
+        if user.is_staff:
+            user_records = CustomUser.objects.annotate(avg_sentiment=Avg('sentimentmodel__sentiment_score')).annotate(
+                last_logged_in=Max('dashboardrecords__last_login_date')).filter(last_logged_in__isnull=False)
 
-    user_count:int = len(user_records)
-    active_users:int = 0
-    print('Test Admin Dashboard Issue: ', [x for x in list(user_records.values_list('avg_sentiment', flat=True),) if x is not None])
-    average_sentiment_score:float = statistics.mean([x for x in list(user_records.values_list('avg_sentiment', flat=True)) if x is not None])
-    #print(f'Average sentiment metric of the admin dashboard: {average_sentiment_score}')
-    for user in user_records.values():
-        if user['last_logged_in'] > now() - timedelta(days=7):
-            active_users += 1
+            user_count:int = len(user_records)
+            active_users:int = 0
+            print('Test Admin Dashboard Issue: ', [x for x in list(user_records.values_list('avg_sentiment', flat=True),) if x is not None])
+            average_sentiment_score:float = statistics.mean([x for x in list(user_records.values_list('avg_sentiment', flat=True)) if x is not None])
+            #print(f'Average sentiment metric of the admin dashboard: {average_sentiment_score}')
+            for user in user_records.values():
+                if user['last_logged_in'] > now() - timedelta(days=7):
+                    active_users += 1
 
-    bar_sentiment_data = json.loads(fetch_bar_sentiment_data(request).content)
-    emotion_map:dict = {}
-    for data in bar_sentiment_data:
-        if data['sentiment_data'] not in emotion_map:
-            emotion_map[data['sentiment_data']] = 1
-        else:
-            emotion_map[data['sentiment_data']] += 1
-    print("Emotion map:", emotion_map)
-    #most_common_emotion = emotion_map[max(emotion_map, key=emotion_map.get)]
-    max_value = max(emotion_map.values());
-    #The most common emotion is fetched wrt all time data.
-    most_common_emotion = [key for key, value in emotion_map.items() if value == max_value]
-    print('Most Common Emotion: ', most_common_emotion[0])
-    #print('Common Emotion Check: ',bar_sentiment_data)
-    return render(request, 'admin/index_.html', {'all_user_info_table': user_records,'user_count':
-        user_count, 'active_users': active_users, 'average_sentiment_score': average_sentiment_score,
-                                                'most_common_emotion': most_common_emotion[0]})
+            bar_sentiment_data = json.loads(fetch_bar_sentiment_data(request).content)
+            emotion_map:dict = {}
+            for data in bar_sentiment_data:
+                if data['sentiment_data'] not in emotion_map:
+                    emotion_map[data['sentiment_data']] = 1
+                else:
+                    emotion_map[data['sentiment_data']] += 1
+            print("Emotion map:", emotion_map)
+            #most_common_emotion = emotion_map[max(emotion_map, key=emotion_map.get)]
+            max_value = max(emotion_map.values());
+            #The most common emotion is fetched wrt all time data.
+            most_common_emotion = [key for key, value in emotion_map.items() if value == max_value]
+            print('Most Common Emotion: ', most_common_emotion[0])
+            #print('Common Emotion Check: ',bar_sentiment_data)
+            return render(request, 'admin/index_.html', {'all_user_info_table': user_records,'user_count':
+                user_count, 'active_users': active_users, 'average_sentiment_score': average_sentiment_score,
+                                                        'most_common_emotion': most_common_emotion[0]})
+    except Exception as e:
+        messages.error(request, 'You are not logged in.')
+        return redirect('login')
 
 #
 # def signup_authentication(func):
@@ -224,9 +233,10 @@ def signup(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
         retype_password = request.POST.get('re_password')
-        agree_terms = request.POST.get('terms_checkbox')
+        #agree_terms = request.POST.get('terms_checkbox')
         phone_number = request.POST.get('phone_number')
-        print('Reaches here!')
+        #print(f'This is the phone number: {phone_number}')
+        #print('Reaches here!')
         # Validation checks
         if not first_name or not last_name or not email or not password or not retype_password:
             message = 'All fields are required'
@@ -235,7 +245,7 @@ def signup(request):
 
         # if len(password) < 8:
         #     message = "Password must be at least 8 characters long."
-        #     return render(request, 'users/SignUp.html',{'message': message})
+        #     return render(request, 'user_template/SignUp.html',{'message': message})
 
         if password != retype_password:
             message = "Passwords do not match."
@@ -245,14 +255,25 @@ def signup(request):
         #     message = "User already exists."
         #     return render(request, 'user_template/SignUp.html', {'message': message})
 
+        try:
+            validate_email(email)
+        except ValidationError:
+            message = "Invalid email format."
+            return render(request, 'user_template/SignUp.html', {'message': message})
+
+        phone_pattern = r'^\+?\d{10,15}$'
+        if not re.match(phone_pattern, phone_number):
+            message = "Invalid phone number. It should contain 10 to 15 digits and may start with '+'."
+            return render(request, 'user_template/SignUp.html', {'message': message})
+
         if CustomUser.objects.filter(email=email).exists():
             message = "Email is already in use."
             return render(request, 'user_template/SignUp.html', {'message': message})
 
         # Terms and conditions checkbox validation
-        if not agree_terms:
-            message = "You must agree to the terms and conditions."
-            return render(request, 'user_template/SignUp.html', {'message': message})
+        # if not agree_terms:
+        #     message = "You must agree to the terms and conditions."
+        #     return render(request, 'user_template/SignUp.html', {'message': message})
         try:
             # print(f'This is the user_data {user_data.get("name")}')
             # #print(f'user_data {user_data.keys()}')
@@ -267,7 +288,7 @@ def signup(request):
                                                   positive_streak=0)
                 dashboard_init.save()
 
-                user_profile_init = UserProfile(user_email=user_filter, first_name=user_filter.first_name, last_name = user_filter.last_name)
+                user_profile_init = UserProfile(user_email=user_filter, first_name=user_filter.first_name, last_name = user_filter.last_name, phone=user_filter.phone_number)
                 user_profile_init.save()
             messages.success(request, "Account created successfully! Please log in.")
             print(">>> Reached point of redirection to login page.")
@@ -316,12 +337,15 @@ def user_dashboard(request):
 
 
 def user_profile(request):
-    user_email = request.session.get('user_id')
-    user = CustomUser.objects.get(email=user_email)
-    user_name = user.first_name
-    profile_data = UserProfile.objects.get(user_email=user)
-    return render(request, 'user_template/profile_test.html', {'profile_data': profile_data, 'user_first_name': user_name})
-
+    try:
+        user_email = request.session.get('user_id')
+        user = CustomUser.objects.get(email=user_email)
+        user_name = user.first_name
+        profile_data = UserProfile.objects.get(user_email=user)
+        print(profile_data.phone)
+        return render(request, 'user_template/profile_test.html', {'profile_data': profile_data, 'user_first_name': user_name})
+    except Exception as e:
+        return redirect('login')
 
 def user_charts(request):
     return render(request, 'user_template/charts.html')
@@ -335,7 +359,7 @@ from django.contrib.auth import logout
 
 
 def logout_view(request):
-    logout(request)
+    #logout(request)
     request.session.flush()
     return redirect('login')
 

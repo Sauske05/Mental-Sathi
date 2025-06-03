@@ -2,7 +2,7 @@ from collections import Counter
 from datetime import datetime, timedelta
 
 from asgiref.sync import sync_to_async
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 import json
 from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -136,10 +136,13 @@ def fetch_admin_table_data(request):
 
 
 def sentiment_page(request):
-    user_email = request.session.get('user_id')
-    user = CustomUser.objects.get(email=user_email)
-    user_name = user.first_name
-    return render(request, 'sentiment_tracker.html', {'user_first_name': user_name})
+    try:
+        user_email = request.session.get('user_id')
+        user = CustomUser.objects.get(email=user_email)
+        user_name = user.first_name
+        return render(request, 'sentiment_tracker.html', {'user_first_name': user_name})
+    except Exception as e:
+        return redirect('login')
 
 
 async def bert_inference(input_text, bert_model):
@@ -240,7 +243,7 @@ async def sentiment_process(request):
             sentiment_id = await process_initial_data(request, feelings_text, emotion, bert_analysis)
 
             prompt_data = {
-                "prompt": f"###System: You are an intelligent and empathetic chatbot capable of providing personalized suggestions to improve the well-being of the user. Your goal is to offer three practical and mood-boosting activities based on the user's current emotional state. Respond with three activities that can help improve someone's mood today. ###User: I'm feeling {emotion} today. {feelings_text} ###Response: ",
+                "prompt": f"###System: You are an intelligent and empathetic chatbot capable of providing personalized suggestions to improve the well-being of the user. Your goal is to offer three practical and mood-boosting activities based on the user's current emotional state. Respond with three activities that can help improve someone's mood today. The user is feeling {emotion} today. This is what the user told : {feelings_text}. ###Response",
                 "max_tokens": 512,
                 "temperature": 0.7
             }
