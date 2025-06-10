@@ -20,10 +20,11 @@
 ## 🛠️ Tech Stack
 
 - **Backend:** Django (main application)
+- **Frotend:**: Bootstrap
 - **LLM Container:** FastAPI
 - **NLP Model:** BERT-based sentiment classifier (custom implementation)
 - **Task Scheduling:** Celery + Celery Beat
-- **Database:** Default Django ORM-supported DB (e.g., SQLite/PostgreSQL)
+- **Database:** MySQL
 
 ## 🚀 Getting Started
 
